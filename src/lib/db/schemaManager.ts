@@ -34,66 +34,78 @@ async function generateSchemaName(): Promise<string> {
 }
 
 /**
+ * Escapes a schema name to prevent SQL injection
+ * Only allows alphanumeric characters and underscores
+ */
+function escapeSchemaName(schemaName: string): string {
+  return schemaName.replace(/[^a-z0-9_]/gi, '');
+}
+
+/**
+ * Generates an array of SQL statements for creating a tenant's schema and all tables
+ */
+function generateTenantSchemaStatements(schemaName: string): string[] {
+  const s = escapeSchemaName(schemaName);
+
+  return [
+    // Create the isolated schema
+    `CREATE SCHEMA ${s}`,
+
+    // Settings table (key-value store with JSONB)
+    `CREATE TABLE ${s}.settings (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+
+    // Taxonomies table (categories/tags with icon and color)
+    `CREATE TABLE ${s}.taxonomies (
+      id SERIAL PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL,
+      icon TEXT,
+      color VARCHAR(7)
+    )`,
+
+    // Posts table (main content storage)
+    `CREATE TABLE ${s}.posts (
+      id SERIAL PRIMARY KEY,
+      content TEXT NOT NULL,
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+
+    // Post-Taxonomy relationships (many-to-many)
+    `CREATE TABLE ${s}.post_taxonomies (
+      post_id INTEGER REFERENCES ${s}.posts(id) ON DELETE CASCADE,
+      tax_id INTEGER REFERENCES ${s}.taxonomies(id) ON DELETE CASCADE,
+      PRIMARY KEY (post_id, tax_id)
+    )`,
+
+    // GIN index for fast metadata queries
+    `CREATE INDEX idx_${s}_posts_meta ON ${s}.posts USING GIN (metadata)`,
+  ];
+}
+
+/**
  * Generates the SQL for creating a tenant's schema and all associated tables
+ * Returns a single string with all statements (for documentation/debugging)
  */
 function generateTenantSchemaSQL(schemaName: string): string {
-  // Escape schema name to prevent SQL injection
-  const escapedSchema = schemaName.replace(/[^a-z0-9_]/gi, '');
-
-  return `
--- =============================================================================
--- Tenant Schema: ${escapedSchema}
--- =============================================================================
-
--- Create the isolated schema
-CREATE SCHEMA ${escapedSchema};
-
--- 1. Tenant Settings (key-value store with JSONB)
-CREATE TABLE ${escapedSchema}.settings (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. Taxonomies (Categories/Tags with icon and color)
-CREATE TABLE ${escapedSchema}.taxonomies (
-    id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    icon TEXT,
-    color VARCHAR(7)
-);
-
--- 3. Posts Table (main content storage)
--- Task IDs and other metadata stored in the 'metadata' JSONB column
-CREATE TABLE ${escapedSchema}.posts (
-    id SERIAL PRIMARY KEY,
-    content TEXT NOT NULL,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 4. Post-Taxonomy Relationships (many-to-many)
-CREATE TABLE ${escapedSchema}.post_taxonomies (
-    post_id INTEGER REFERENCES ${escapedSchema}.posts(id) ON DELETE CASCADE,
-    tax_id INTEGER REFERENCES ${escapedSchema}.taxonomies(id) ON DELETE CASCADE,
-    PRIMARY KEY (post_id, tax_id)
-);
-
--- 5. Performance Index for metadata queries
--- Makes Task-to-Goal link (via ID array) instant
-CREATE INDEX idx_${escapedSchema}_posts_meta ON ${escapedSchema}.posts USING GIN (metadata);
-  `.trim();
+  const statements = generateTenantSchemaStatements(schemaName);
+  return statements.join(';\n\n') + ';';
 }
 
 /**
  * Creates a new tenant schema in the database
- * Executes the generated SQL to create schema and all tables
+ * Executes each SQL statement separately (Prisma limitation)
  */
 async function createTenantSchema(schemaName: string): Promise<void> {
-  const sql = generateTenantSchemaSQL(schemaName);
+  const statements = generateTenantSchemaStatements(schemaName);
 
-  // Execute the schema creation SQL
-  await prisma.$executeRawUnsafe(sql);
+  // Execute each statement separately
+  for (const sql of statements) {
+    await prisma.$executeRawUnsafe(sql);
+  }
 }
 
 /**
@@ -101,9 +113,7 @@ async function createTenantSchema(schemaName: string): Promise<void> {
  * USE WITH CAUTION - this permanently deletes all tenant data
  */
 async function dropTenantSchema(schemaName: string): Promise<void> {
-  // Escape schema name to prevent SQL injection
-  const escapedSchema = schemaName.replace(/[^a-z0-9_]/gi, '');
-
+  const escapedSchema = escapeSchemaName(schemaName);
   await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS ${escapedSchema} CASCADE`);
 }
 
@@ -111,7 +121,7 @@ async function dropTenantSchema(schemaName: string): Promise<void> {
  * Checks if a tenant schema exists
  */
 async function tenantSchemaExists(schemaName: string): Promise<boolean> {
-  const escapedSchema = schemaName.replace(/[^a-z0-9_]/gi, '');
+  const escapedSchema = escapeSchemaName(schemaName);
 
   const result = await prisma.$queryRaw<{ exists: boolean }[]>`
     SELECT EXISTS (
@@ -205,8 +215,10 @@ export async function getTenantSchemaByEmail(email: string): Promise<string | nu
 }
 
 export {
+  escapeSchemaName,
   generateSchemaName,
   generateTenantSchemaSQL,
+  generateTenantSchemaStatements,
   createTenantSchema,
   dropTenantSchema,
   tenantSchemaExists,

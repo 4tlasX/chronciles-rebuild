@@ -73,8 +73,8 @@ export async function upsertSetting(
   const schema = escapeSchema(schemaName);
   const result = await prisma.$queryRawUnsafe<Setting[]>(
     `INSERT INTO ${schema}.settings (key, value, updated_at)
-     VALUES ($1, $2, NOW())
-     ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+     VALUES ($1, $2::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = NOW()
      RETURNING key, value, updated_at as "updatedAt"`,
     key,
     JSON.stringify(value)
@@ -192,7 +192,7 @@ export async function createPost(
   const schema = escapeSchema(schemaName);
   const result = await prisma.$queryRawUnsafe<Post[]>(
     `INSERT INTO ${schema}.posts (content, metadata)
-     VALUES ($1, $2)
+     VALUES ($1, $2::jsonb)
      RETURNING id, content, metadata, created_at as "createdAt"`,
     content,
     JSON.stringify(metadata)
@@ -247,7 +247,8 @@ export async function updatePost(
   }
 
   if (updates.metadata !== undefined) {
-    setClauses.push(`metadata = $${paramIndex++}`);
+    setClauses.push(`metadata = $${paramIndex}::jsonb`);
+    paramIndex++;
     values.push(JSON.stringify(updates.metadata));
   }
 
@@ -357,7 +358,7 @@ export async function findPostsByMetadata(
   return prisma.$queryRawUnsafe<Post[]>(
     `SELECT id, content, metadata, created_at as "createdAt"
      FROM ${schema}.posts
-     WHERE metadata @> $1
+     WHERE metadata @> $1::jsonb
      ORDER BY created_at DESC`,
     JSON.stringify({ [key]: value })
   );
