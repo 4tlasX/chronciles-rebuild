@@ -5,14 +5,12 @@ import { deletePostAction } from './actions';
 
 interface PostDeleteButtonProps {
   postId: number;
-  email: string;
 }
 
-export function PostDeleteButton({ postId, email }: PostDeleteButtonProps) {
+export function PostDeleteButton({ postId }: PostDeleteButtonProps) {
   const handleDelete = async () => {
     const formData = new FormData();
     formData.append('id', postId.toString());
-    formData.append('email', email);
     await deletePostAction(formData);
   };
 

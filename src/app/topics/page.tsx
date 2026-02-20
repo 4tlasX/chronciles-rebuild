@@ -1,37 +1,26 @@
+import { redirect } from 'next/navigation';
 import { getAllTaxonomies } from '@/lib/db';
-import { getSchemaFromRequest } from '@/lib/auth';
+import { getServerSession } from '@/app/auth/actions';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layout';
-import { Card } from '@/components/card';
 import { TopicCard } from '@/components/topic';
 import { TopicCreateForm } from './TopicCreateForm';
 import { TopicEditForm } from './TopicEditForm';
 import { TopicDeleteButton } from './TopicDeleteButton';
 
-interface PageProps {
-  searchParams: Promise<{ email?: string }>;
-}
+export default async function TopicsPage() {
+  const session = await getServerSession();
 
-export default async function TopicsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const auth = await getSchemaFromRequest(params);
-
-  if (!auth) {
-    return (
-      <PageContainer>
-        <Card>
-          <p>User not found. Please register first or use ?email=demo@chronicles.local</p>
-        </Card>
-      </PageContainer>
-    );
+  if (!session) {
+    redirect('/auth/login');
   }
 
-  const topics = await getAllTaxonomies(auth.schemaName);
+  const topics = await getAllTaxonomies(session.schemaName);
 
   return (
     <PageContainer>
       <PageHeader title="Topics" />
 
-      <TopicCreateForm email={auth.email} />
+      <TopicCreateForm />
 
       {topics.length === 0 ? (
         <EmptyState message="No topics yet. Create your first topic above." />
@@ -42,8 +31,8 @@ export default async function TopicsPage({ searchParams }: PageProps) {
             topic={topic}
             actions={
               <>
-                <TopicEditForm topic={topic} email={auth.email} />
-                <TopicDeleteButton topicId={topic.id} email={auth.email} />
+                <TopicEditForm topic={topic} />
+                <TopicDeleteButton topicId={topic.id} />
               </>
             }
           />

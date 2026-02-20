@@ -1,22 +1,15 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { PageContainer, PageHeader } from '@/components/layout';
 import { LoginForm } from '@/components/auth';
-import { useAuthStore } from '@/stores';
+import { getServerSession } from '@/app/auth/actions';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isSessionValid = useAuthStore((state) => state.isSessionValid);
-
-  useEffect(() => {
-    if (isAuthenticated && isSessionValid()) {
-      router.push('/');
-    }
-  }, [isAuthenticated, isSessionValid, router]);
+export default async function LoginPage() {
+  // If already logged in, redirect to home
+  const session = await getServerSession();
+  if (session) {
+    redirect('/');
+  }
 
   return (
     <PageContainer>

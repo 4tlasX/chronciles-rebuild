@@ -1,24 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  createTaxonomy,
-  updateTaxonomy,
-  deleteTaxonomy,
-  getTenantSchemaByEmail,
-} from '@/lib/db';
-
-const DEMO_EMAIL = 'demo@chronicles.local';
-
-async function getSchema(formData: FormData): Promise<string | null> {
-  const email = (formData.get('email') as string) || DEMO_EMAIL;
-  return getTenantSchemaByEmail(email);
-}
+import { createTaxonomy, updateTaxonomy, deleteTaxonomy } from '@/lib/db';
+import { getServerSession } from '@/app/auth/actions';
 
 export async function createTopicAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const name = formData.get('name') as string;
@@ -29,7 +18,7 @@ export async function createTopicAction(formData: FormData) {
     return { error: 'Name is required' };
   }
 
-  await createTaxonomy(schemaName, name, {
+  await createTaxonomy(session.schemaName, name, {
     icon: icon || undefined,
     color: color || undefined,
   });
@@ -39,9 +28,9 @@ export async function createTopicAction(formData: FormData) {
 }
 
 export async function updateTopicAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const id = parseInt(formData.get('id') as string, 10);
@@ -65,15 +54,15 @@ export async function updateTopicAction(formData: FormData) {
     updates.color = color || undefined;
   }
 
-  await updateTaxonomy(schemaName, id, updates);
+  await updateTaxonomy(session.schemaName, id, updates);
   revalidatePath('/topics');
   return { success: true };
 }
 
 export async function deleteTopicAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const id = parseInt(formData.get('id') as string, 10);
@@ -82,7 +71,7 @@ export async function deleteTopicAction(formData: FormData) {
     return { error: 'Topic ID is required' };
   }
 
-  await deleteTaxonomy(schemaName, id);
+  await deleteTaxonomy(session.schemaName, id);
   revalidatePath('/topics');
   return { success: true };
 }

@@ -8,14 +8,12 @@ import type { Post } from '@/lib/db';
 
 interface PostEditFormProps {
   post: Post;
-  email: string;
 }
 
-export function PostEditForm({ post, email }: PostEditFormProps) {
+export function PostEditForm({ post }: PostEditFormProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
-    formData.append('email', email);
     await updatePostAction(formData);
     setIsOpen(false);
   };
