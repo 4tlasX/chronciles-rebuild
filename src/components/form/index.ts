@@ -9,3 +9,4 @@ export { Checkbox, type CheckboxProps } from './Checkbox';
 export { Radio, type RadioProps } from './Radio';
 export { KeyValuePair, type KeyValuePairProps, type KeyValuePairData } from './KeyValuePair';
 export { KeyValueList, type KeyValueListProps } from './KeyValueList';
+export { PasswordInput, type PasswordInputProps } from './PasswordInput';

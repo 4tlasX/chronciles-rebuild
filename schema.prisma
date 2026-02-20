@@ -14,13 +14,37 @@ generator client {
 // the application which random schema name belongs to which user.
 
 model Account {
-  id               Int      @id @default(autoincrement())
-  userId           String   @unique @default(uuid()) @db.Uuid
-  email            String   @unique
-  tenantSchemaName String   @unique @map("tenant_schema_name")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                Int       @id @default(autoincrement())
+  userId            String    @unique @default(uuid()) @db.Uuid
+  email             String    @unique
+  username          String    @unique
+  passwordHash      String    @map("password_hash")
+  tenantSchemaName  String    @unique @map("tenant_schema_name")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  sessions          Session[]
 
   @@map("accounts")
+}
+
+// =============================================================================
+// Sessions (for traditional session-based auth)
+// =============================================================================
+// Sessions are stored in a separate table with a 1-hour expiration.
+// The session token is stored in an HTTP-only cookie on the client.
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @default(uuid()) @db.Uuid
+  accountId Int      @map("account_id")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 // =============================================================================
