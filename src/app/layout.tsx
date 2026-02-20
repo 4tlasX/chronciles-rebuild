@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
+import { Nav } from '@/components/layout'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Chronicles',
-  description: 'A Next.js application',
+  description: 'A multi-tenant blogging system',
 }
 
 export default function RootLayout({
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Nav />
+        {children}
+      </body>
     </html>
   )
 }
