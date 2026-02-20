@@ -6,3 +6,32 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// =============================================================================
+// Phase 1: Global Registry
+// =============================================================================
+// This table lives in the public schema. It acts as the "map" that tells
+// the application which random schema name belongs to which user.
+
+model Account {
+  id               Int      @id @default(autoincrement())
+  userId           String   @unique @default(uuid()) @db.Uuid
+  email            String   @unique
+  tenantSchemaName String   @unique @map("tenant_schema_name")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("accounts")
+}
+
+// =============================================================================
+// Schema Counter (for generating unique schema names)
+// =============================================================================
+// Used to generate sequential, unique tenant schema names
+
+model SchemaCounter {
+  id            Int      @id @default(1)
+  currentNumber Int      @default(0) @map("current_number")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("schema_counter")
+}
