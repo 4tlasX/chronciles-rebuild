@@ -6,7 +6,6 @@ describe('authStore', () => {
     // Reset store before each test
     useAuthStore.setState({
       isAuthenticated: false,
-      userSchema: null,
       userName: null,
       userEmail: null,
       userSettings: {},
@@ -21,7 +20,6 @@ describe('authStore', () => {
 
     it('starts with null user data', () => {
       const state = useAuthStore.getState();
-      expect(state.userSchema).toBeNull();
       expect(state.userName).toBeNull();
       expect(state.userEmail).toBeNull();
     });
@@ -35,21 +33,18 @@ describe('authStore', () => {
   describe('setAuth', () => {
     it('sets authentication state', () => {
       useAuthStore.getState().setAuth({
-        userSchema: 'usr_123_abc',
         userName: 'testuser',
         userEmail: 'test@example.com',
       });
 
       const state = useAuthStore.getState();
       expect(state.isAuthenticated).toBe(true);
-      expect(state.userSchema).toBe('usr_123_abc');
       expect(state.userName).toBe('testuser');
       expect(state.userEmail).toBe('test@example.com');
     });
 
     it('sets user settings when provided', () => {
       useAuthStore.getState().setAuth({
-        userSchema: 'usr_123_abc',
         userName: 'testuser',
         userEmail: 'test@example.com',
         userSettings: { theme: 'dark' },
@@ -64,7 +59,6 @@ describe('authStore', () => {
     it('clears all authentication state', () => {
       // First set auth
       useAuthStore.getState().setAuth({
-        userSchema: 'usr_123_abc',
         userName: 'testuser',
         userEmail: 'test@example.com',
         userSettings: { theme: 'dark' },
@@ -75,7 +69,6 @@ describe('authStore', () => {
 
       const state = useAuthStore.getState();
       expect(state.isAuthenticated).toBe(false);
-      expect(state.userSchema).toBeNull();
       expect(state.userName).toBeNull();
       expect(state.userEmail).toBeNull();
       expect(state.userSettings).toEqual({});

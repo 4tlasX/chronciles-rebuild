@@ -135,13 +135,18 @@ async function tenantSchemaExists(schemaName: string): Promise<boolean> {
 
 /**
  * Registers a new account and creates their tenant schema
- * This is the main entry point for user signup
+ * This is a lower-level function - prefer registerUserAction for user signup
  */
-export async function registerTenant(email: string): Promise<{
+export async function registerTenant(
+  email: string,
+  username: string,
+  passwordHash: string
+): Promise<{
   account: {
     id: number;
     userId: string;
     email: string;
+    username: string;
     tenantSchemaName: string;
     createdAt: Date;
   };
@@ -154,6 +159,8 @@ export async function registerTenant(email: string): Promise<{
   const account = await prisma.account.create({
     data: {
       email,
+      username,
+      passwordHash,
       tenantSchemaName: schemaName,
     },
   });

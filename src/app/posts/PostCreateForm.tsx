@@ -4,19 +4,10 @@ import { PostForm } from '@/components/post';
 import { FormPanel } from '@/components/layout';
 import { createPostAction } from './actions';
 
-interface PostCreateFormProps {
-  email: string;
-}
-
-export function PostCreateForm({ email }: PostCreateFormProps) {
-  const handleSubmit = async (formData: FormData) => {
-    formData.append('email', email);
-    await createPostAction(formData);
-  };
-
+export function PostCreateForm() {
   return (
     <FormPanel title="Create New Post">
-      <PostForm onSubmit={handleSubmit} submitLabel="Create Post" />
+      <PostForm onSubmit={createPostAction} submitLabel="Create Post" />
     </FormPanel>
   );
 }

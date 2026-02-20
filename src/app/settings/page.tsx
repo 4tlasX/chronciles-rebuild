@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation';
 import { getAllSettings } from '@/lib/db';
-import { getSchemaFromRequest } from '@/lib/auth';
+import { getServerSession } from '@/app/auth/actions';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layout';
 import { Card } from '@/components/card';
 import { SettingsTable, SettingRow } from '@/components/settings';
@@ -7,31 +8,20 @@ import { SettingCreateForm } from './SettingCreateForm';
 import { SettingEditForm } from './SettingEditForm';
 import { SettingDeleteButton } from './SettingDeleteButton';
 
-interface PageProps {
-  searchParams: Promise<{ email?: string }>;
-}
+export default async function SettingsPage() {
+  const session = await getServerSession();
 
-export default async function SettingsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const auth = await getSchemaFromRequest(params);
-
-  if (!auth) {
-    return (
-      <PageContainer>
-        <Card>
-          <p>User not found. Please register first or use ?email=demo@chronicles.local</p>
-        </Card>
-      </PageContainer>
-    );
+  if (!session) {
+    redirect('/auth/login');
   }
 
-  const settings = await getAllSettings(auth.schemaName);
+  const settings = await getAllSettings(session.schemaName);
 
   return (
     <PageContainer>
       <PageHeader title="Settings" />
 
-      <SettingCreateForm email={auth.email} />
+      <SettingCreateForm />
 
       {settings.length === 0 ? (
         <EmptyState message="No settings yet. Add your first setting above." />
@@ -44,8 +34,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                 setting={setting}
                 actions={
                   <>
-                    <SettingEditForm setting={setting} email={auth.email} />
-                    <SettingDeleteButton settingKey={setting.key} email={auth.email} />
+                    <SettingEditForm setting={setting} />
+                    <SettingDeleteButton settingKey={setting.key} />
                   </>
                 }
               />

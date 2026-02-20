@@ -8,11 +8,11 @@ import { generateSchemaName, createTenantSchema } from '@/lib/db';
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const SESSION_COOKIE_NAME = 'chronicles_session';
 
+// Result returned to client (no schema info)
 export interface AuthResult {
   success?: boolean;
   error?: string;
   data?: {
-    userSchema: string;
     userName: string;
     userEmail: string;
   };
@@ -175,10 +175,10 @@ export async function registerUserAction(formData: FormData): Promise<AuthResult
   const { token, expiresAt } = await createSession(account.id);
   await setSessionCookie(token, expiresAt);
 
+  // Return only display info to client (no schema)
   return {
     success: true,
     data: {
-      userSchema: account.tenantSchemaName,
       userName: account.username,
       userEmail: account.email,
     },
@@ -223,10 +223,10 @@ export async function loginUserAction(formData: FormData): Promise<AuthResult> {
   const { token, expiresAt } = await createSession(account.id);
   await setSessionCookie(token, expiresAt);
 
+  // Return only display info to client (no schema)
   return {
     success: true,
     data: {
-      userSchema: account.tenantSchemaName,
       userName: account.username,
       userEmail: account.email,
     },
@@ -248,15 +248,12 @@ export async function logoutAction(): Promise<AuthResult> {
 }
 
 /**
- * Validate the current session from cookie.
- * Uses "double-blind" validation: reads token from cookie, looks up session,
- * then gets user data from the session's associated account.
- * Implements sliding window expiration - extends session on each validation.
+ * Validate the current session from cookie (for client use).
+ * Returns only display info - no schema.
  */
 export async function validateSessionAction(): Promise<{
   valid: boolean;
   data?: {
-    userSchema: string;
     userName: string;
     userEmail: string;
   };
@@ -267,14 +264,11 @@ export async function validateSessionAction(): Promise<{
     return { valid: false };
   }
 
-  // Double-blind validation: look up session by token (from cookie),
-  // then get user data from the associated account
   const session = await prisma.session.findUnique({
     where: { token },
     include: {
       account: {
         select: {
-          tenantSchemaName: true,
           username: true,
           email: true,
         },
@@ -301,7 +295,6 @@ export async function validateSessionAction(): Promise<{
   return {
     valid: true,
     data: {
-      userSchema: session.account.tenantSchemaName,
       userName: session.account.username,
       userEmail: session.account.email,
     },
@@ -309,13 +302,41 @@ export async function validateSessionAction(): Promise<{
 }
 
 /**
- * Get current session data (for use in components)
+ * Get tenant schema for server-side use only.
+ * Validates session and returns the user's schema name.
+ * This should NEVER be exposed to the client.
  */
-export async function getSessionAction(): Promise<{
-  userSchema: string;
+export async function getServerSession(): Promise<{
+  schemaName: string;
   userName: string;
   userEmail: string;
 } | null> {
-  const result = await validateSessionAction();
-  return result.valid && result.data ? result.data : null;
+  const token = await getSessionToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { token },
+    include: {
+      account: {
+        select: {
+          tenantSchemaName: true,
+          username: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!session || session.expiresAt < new Date()) {
+    return null;
+  }
+
+  return {
+    schemaName: session.account.tenantSchemaName,
+    userName: session.account.username,
+    userEmail: session.account.email,
+  };
 }

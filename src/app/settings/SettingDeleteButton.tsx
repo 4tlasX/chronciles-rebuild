@@ -5,14 +5,12 @@ import { deleteSettingAction } from './actions';
 
 interface SettingDeleteButtonProps {
   settingKey: string;
-  email: string;
 }
 
-export function SettingDeleteButton({ settingKey, email }: SettingDeleteButtonProps) {
+export function SettingDeleteButton({ settingKey }: SettingDeleteButtonProps) {
   const handleDelete = async () => {
     const formData = new FormData();
     formData.append('key', settingKey);
-    formData.append('email', email);
     await deleteSettingAction(formData);
   };
 

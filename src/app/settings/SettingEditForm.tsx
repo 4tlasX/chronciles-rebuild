@@ -8,14 +8,12 @@ import type { Setting } from '@/lib/db';
 
 interface SettingEditFormProps {
   setting: Setting;
-  email: string;
 }
 
-export function SettingEditForm({ setting, email }: SettingEditFormProps) {
+export function SettingEditForm({ setting }: SettingEditFormProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
-    formData.append('email', email);
     await upsertSettingAction(formData);
     setIsOpen(false);
   };

@@ -1,23 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  upsertSetting,
-  deleteSetting,
-  getTenantSchemaByEmail,
-} from '@/lib/db';
-
-const DEMO_EMAIL = 'demo@chronicles.local';
-
-async function getSchema(formData: FormData): Promise<string | null> {
-  const email = (formData.get('email') as string) || DEMO_EMAIL;
-  return getTenantSchemaByEmail(email);
-}
+import { upsertSetting, deleteSetting } from '@/lib/db';
+import { getServerSession } from '@/app/auth/actions';
 
 export async function upsertSettingAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const key = formData.get('key') as string;
@@ -38,15 +28,15 @@ export async function upsertSettingAction(formData: FormData) {
     }
   }
 
-  await upsertSetting(schemaName, key, value);
+  await upsertSetting(session.schemaName, key, value);
   revalidatePath('/settings');
   return { success: true };
 }
 
 export async function deleteSettingAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const key = formData.get('key') as string;
@@ -55,7 +45,7 @@ export async function deleteSettingAction(formData: FormData) {
     return { error: 'Key is required' };
   }
 
-  await deleteSetting(schemaName, key);
+  await deleteSetting(session.schemaName, key);
   revalidatePath('/settings');
   return { success: true };
 }

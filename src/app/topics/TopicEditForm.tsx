@@ -8,14 +8,12 @@ import type { Taxonomy } from '@/lib/db';
 
 interface TopicEditFormProps {
   topic: Taxonomy;
-  email: string;
 }
 
-export function TopicEditForm({ topic, email }: TopicEditFormProps) {
+export function TopicEditForm({ topic }: TopicEditFormProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
-    formData.append('email', email);
     await updateTopicAction(formData);
     setIsOpen(false);
   };

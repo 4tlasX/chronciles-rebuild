@@ -1,24 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  createPost,
-  updatePost,
-  deletePost,
-  getTenantSchemaByEmail,
-} from '@/lib/db';
-
-const DEMO_EMAIL = 'demo@chronicles.local';
-
-async function getSchema(formData: FormData): Promise<string | null> {
-  const email = (formData.get('email') as string) || DEMO_EMAIL;
-  return getTenantSchemaByEmail(email);
-}
+import { createPost, updatePost, deletePost } from '@/lib/db';
+import { getServerSession } from '@/app/auth/actions';
 
 export async function createPostAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const content = formData.get('content') as string;
@@ -37,15 +26,15 @@ export async function createPostAction(formData: FormData) {
     }
   }
 
-  await createPost(schemaName, content, metadata);
-  revalidatePath('/posts');
+  await createPost(session.schemaName, content, metadata);
+  revalidatePath('/');
   return { success: true };
 }
 
 export async function updatePostAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const id = parseInt(formData.get('id') as string, 10);
@@ -70,15 +59,15 @@ export async function updatePostAction(formData: FormData) {
     }
   }
 
-  await updatePost(schemaName, id, updates);
-  revalidatePath('/posts');
+  await updatePost(session.schemaName, id, updates);
+  revalidatePath('/');
   return { success: true };
 }
 
 export async function deletePostAction(formData: FormData) {
-  const schemaName = await getSchema(formData);
-  if (!schemaName) {
-    return { error: 'User not found' };
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
   }
 
   const id = parseInt(formData.get('id') as string, 10);
@@ -87,7 +76,7 @@ export async function deletePostAction(formData: FormData) {
     return { error: 'Post ID is required' };
   }
 
-  await deletePost(schemaName, id);
-  revalidatePath('/posts');
+  await deletePost(session.schemaName, id);
+  revalidatePath('/');
   return { success: true };
 }

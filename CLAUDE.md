@@ -1,21 +1,186 @@
 # Chronicles
 
-A multi-tenant blogging system built with Next.js 14, React 18, TypeScript, and PostgreSQL via Prisma.
+A multi-tenant blogging system built with Next.js 16, React 18, TypeScript, and PostgreSQL via Prisma.
+
+## Authentication System
+
+### Overview
+
+Authentication uses HTTP-only cookies with server-side session validation. The tenant schema name (e.g., `usr_742_a9f2j`) is **never exposed to the client**.
+
+### Key Files
+
+```
+src/
+├── app/
+│   ├── layout.tsx                 # Wraps app with AuthProvider
+│   └── auth/
+│       ├── actions.ts             # Server actions (login, register, validate)
+│       ├── login/page.tsx         # Login page
+│       └── signup/page.tsx        # Sign up page
+├── components/auth/
+│   ├── AuthProvider.tsx           # Session validation on every navigation
+│   ├── LoginForm.tsx              # Login form component
+│   └── SignUpForm.tsx             # Registration form component
+├── stores/
+│   └── authStore.ts               # Zustand store (display data only)
+└── lib/auth/
+    ├── password.ts                # Bcrypt hash/verify
+    └── validation.ts              # Input validation
+```
+
+### Authentication Flow
+
+```
+User visits /settings (protected page)
+        │
+        ▼
+┌─────────────────┐
+│   RootLayout    │  src/app/layout.tsx
+│   <AuthProvider>│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│         AuthProvider                │  src/components/auth/AuthProvider.tsx
+│  isChecking = true (show loading)   │
+└────────┬────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   Is PUBLIC_PATHS? (/auth/login,    │
+│   /auth/signup)                     │
+└────────┬────────────────────────────┘
+         │ No (protected route)
+         ▼
+┌─────────────────────────────────────┐
+│   validateSessionAction()           │  src/app/auth/actions.ts
+│   - Read HTTP-only cookie           │
+│   - Find Session in database        │
+│   - Check expiration                │
+└────────┬────────────────────────────┘
+         │
+         ▼
+    ┌────────────┐
+    │   Valid?   │
+    └─────┬──────┘
+          │
+    ┌─────┴─────┐
+    │           │
+    ▼           ▼
+  Yes          No
+    │           │
+    ▼           ▼
+┌─────────┐  ┌──────────────────────┐
+│ Extend  │  │ clearAuth()          │
+│ session │  │ redirect('/auth/login')│
+│ (sliding│  └──────────────────────┘
+│ window) │
+└────┬────┘
+     │
+     ▼
+┌─────────────────────────────────────┐
+│   setAuth({ userName, userEmail })  │  Zustand store (client state)
+│   isChecking = false                │
+└────────┬────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   Render <SettingsPage />           │  src/app/settings/page.tsx
+│   - getServerSession() → schemaName │
+│   - getAllSettings(schemaName)      │
+└─────────────────────────────────────┘
+```
+
+### Server Actions (src/app/auth/actions.ts)
+
+| Function | Description |
+|----------|-------------|
+| `registerUserAction(formData)` | Create account + tenant schema, set session cookie |
+| `loginUserAction(formData)` | Verify credentials, create session, set cookie |
+| `logoutAction()` | Delete session, clear cookie |
+| `validateSessionAction()` | Check session validity, return `{ valid, data }` for client |
+| `getServerSession()` | **Server-only**: Returns `{ schemaName, userName, userEmail }` |
+| `cleanupExpiredSessions()` | Delete expired sessions from database |
+
+### Session Security
+
+- **HTTP-only cookies**: Session token not accessible to JavaScript
+- **Sliding window expiration**: 1-hour sessions, extended on each validation
+- **Single session policy**: Login invalidates previous sessions
+- **Failed login protection**: Wrong password clears any existing session
+- **Double-blind validation**: Client never sees tenant schema name
+
+### Zustand Store (src/stores/authStore.ts)
+
+Client-side state for display purposes only:
+
+```typescript
+{
+  isAuthenticated: boolean;
+  userName: string | null;
+  userEmail: string | null;
+  userSettings: Record<string, unknown>;
+}
+```
+
+**Note**: No `persist` middleware. The HTTP-only cookie is the source of truth.
+
+### Protected Pages Pattern
+
+Server components use `getServerSession()`:
+
+```typescript
+export default async function SettingsPage() {
+  const session = await getServerSession();
+
+  if (!session) {
+    redirect('/auth/login');
+  }
+
+  const settings = await getAllSettings(session.schemaName);
+  // ... render
+}
+```
+
+### CRUD Actions Pattern
+
+Server actions get schema from session, not from client:
+
+```typescript
+export async function createPostAction(formData: FormData) {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  await createPost(session.schemaName, content);
+}
+```
+
+---
 
 ## Database Architecture
 
-### Phase 1: Global Registry (schema.prisma)
+### Global Registry (schema.prisma)
 
 The public schema contains tables that map users to their isolated tenant schemas.
 
-**`Account` model** - Maps users to their private schemas:
-- `userId` (UUID) - Fixed identifier for application logic
+**`Account` model**:
+- `userId` (UUID) - Fixed identifier
 - `email` - Unique user email
+- `username` - Unique username
+- `passwordHash` - Bcrypt hashed password
 - `tenantSchemaName` - Links to user's private schema (e.g., `usr_742_a9f2j`)
+
+**`Session` model**:
+- `token` (UUID) - Session identifier (stored in HTTP-only cookie)
+- `accountId` - Foreign key to Account
+- `expiresAt` - Session expiration timestamp
 
 **`SchemaCounter` model** - Atomic counter for generating unique schema names
 
-### Phase 2: Tenant Schema (Dynamic)
+### Tenant Schema (Dynamic)
 
 When a user signs up, an isolated PostgreSQL schema is created containing:
 
@@ -27,30 +192,21 @@ When a user signs up, an isolated PostgreSQL schema is created containing:
 | `post_taxonomies` | TABLE | Many-to-many post-taxonomy relationships |
 | `idx_*_posts_meta` | INDEX | GIN index for fast metadata queries |
 
-## Key Files
-
-```
-src/lib/
-├── prisma.ts              # Prisma client singleton
-└── db/
-    ├── index.ts           # Module exports
-    ├── schemaManager.ts   # Tenant schema creation/deletion
-    └── tenantQueries.ts   # CRUD operations for tenant tables
-```
+---
 
 ## API Reference
 
-### Schema Management (schemaManager.ts)
+### Schema Management (src/lib/db/schemaManager.ts)
 
 | Function | Description |
 |----------|-------------|
-| `registerTenant(email)` | Creates account + isolated schema, returns `{ account, schemaName }` |
+| `registerTenant(email, username, passwordHash)` | Creates account + isolated schema |
 | `deleteTenant(userId)` | Removes account + drops schema |
 | `getTenantSchema(userId)` | Returns schema name for a user |
 | `getTenantSchemaByEmail(email)` | Returns schema name by email |
 | `tenantSchemaExists(schemaName)` | Checks if schema exists |
 
-### Tenant Queries (tenantQueries.ts)
+### Tenant Queries (src/lib/db/tenantQueries.ts)
 
 All functions take `schemaName` as first parameter.
 
@@ -61,10 +217,10 @@ All functions take `schemaName` as first parameter.
 - `deleteSetting(schema, key)` - Delete setting
 
 **Taxonomies:**
-- `createTaxonomy(schema, name, options?)` - Create taxonomy (options: `{ icon?, color? }`)
+- `createTaxonomy(schema, name, options?)` - Create taxonomy
 - `getTaxonomy(schema, id)` - Get single taxonomy
 - `getAllTaxonomies(schema)` - Get all taxonomies
-- `updateTaxonomy(schema, id, updates)` - Update taxonomy (updates: `{ name?, icon?, color? }`)
+- `updateTaxonomy(schema, id, updates)` - Update taxonomy
 - `deleteTaxonomy(schema, id)` - Delete taxonomy
 
 **Posts:**
@@ -81,51 +237,60 @@ All functions take `schemaName` as first parameter.
 - `getPostsByTaxonomy(schema, taxId)` - Get posts with taxonomy
 - `getPostWithTaxonomies(schema, postId)` - Get post with joined taxonomies
 
-**Metadata Search (uses GIN index):**
+**Metadata Search:**
 - `findPostsByMetadata(schema, key, value)` - Find posts by metadata key-value
 - `findPostsWithMetadataKey(schema, key)` - Find posts containing metadata key
 
-## Usage Example
-
-```typescript
-import { registerTenant, createPost, createTaxonomy, addTaxonomyToPost } from '@/lib/db';
-
-// Sign up a new user
-const { account, schemaName } = await registerTenant('user@example.com');
-
-// Create content in their isolated schema
-const post = await createPost(schemaName, 'My first blog post', { featured: true });
-const tag = await createTaxonomy(schemaName, 'Technology', { icon: '💻', color: '#3B82F6' });
-await addTaxonomyToPost(schemaName, post.id, tag.id);
-```
-
-## Database Commands
-
-```bash
-npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema to database
-npm run db:migrate   # Run migrations
-npm run db:studio    # Open Prisma Studio
-```
+---
 
 ## Project Structure
 
 ```
 chronicles/
-├── schema.prisma          # Prisma schema (global tables)
-├── prisma.config.ts       # Prisma configuration
-├── next.config.js         # Next.js configuration
+├── schema.prisma              # Prisma schema (Account, Session, SchemaCounter)
+├── prisma.config.ts           # Prisma configuration
+├── next.config.js             # Next.js configuration
 ├── package.json
 ├── tsconfig.json
-├── .env                   # Environment variables
+├── .env                       # Environment variables
 │
 └── src/
     ├── app/
-    │   ├── layout.tsx     # Root layout
-    │   ├── page.tsx       # Home page
-    │   └── globals.css    # Global styles
-    ├── components/        # React components
+    │   ├── layout.tsx         # Root layout (wraps AuthProvider)
+    │   ├── page.tsx           # Home page (posts)
+    │   ├── globals.css        # Global styles
+    │   ├── auth/
+    │   │   ├── actions.ts     # Auth server actions
+    │   │   ├── login/         # Login page
+    │   │   └── signup/        # Sign up page
+    │   ├── posts/             # Post CRUD
+    │   ├── topics/            # Topic/taxonomy CRUD
+    │   └── settings/          # Settings CRUD
+    ├── components/
+    │   ├── auth/              # AuthProvider, LoginForm, SignUpForm
+    │   ├── form/              # Form components
+    │   ├── layout/            # Layout components
+    │   ├── post/              # Post components
+    │   ├── settings/          # Settings components
+    │   └── topic/             # Topic components
+    ├── stores/
+    │   └── authStore.ts       # Zustand auth store
     └── lib/
-        ├── prisma.ts      # Prisma client
-        └── db/            # Database utilities
+        ├── prisma.ts          # Prisma client singleton
+        ├── auth/              # Password hashing, validation
+        └── db/                # Schema manager, tenant queries
+```
+
+---
+
+## Commands
+
+```bash
+npm run dev          # Start dev server (localhost only)
+npm run build        # Production build
+npm run test:run     # Run all tests
+npm run db:generate  # Generate Prisma client
+npm run db:push      # Push schema to database
+npm run db:migrate   # Run migrations
+npm run db:studio    # Open Prisma Studio
 ```

@@ -24,7 +24,6 @@ interface FormErrors {
 
 export function SignUpForm() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
   const [formData, setFormData] = useState<FormState>({
     username: '',
     email: '',
@@ -66,8 +65,7 @@ export function SignUpForm() {
     }
 
     if (result.success && result.data) {
-      setAuth({
-        userSchema: result.data.userSchema,
+      useAuthStore.getState().setAuth({
         userName: result.data.userName,
         userEmail: result.data.userEmail,
       });

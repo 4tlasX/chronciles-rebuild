@@ -9,7 +9,6 @@ import { loginUserAction } from '@/app/auth/actions';
 
 export function LoginForm() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,8 +32,7 @@ export function LoginForm() {
     }
 
     if (result.success && result.data) {
-      setAuth({
-        userSchema: result.data.userSchema,
+      useAuthStore.getState().setAuth({
         userName: result.data.userName,
         userEmail: result.data.userEmail,
       });

@@ -4,8 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores';
 import { validateSessionAction } from '@/app/auth/actions';
+import { Nav } from '@/components/layout';
 
 const PUBLIC_PATHS = ['/auth/login', '/auth/signup'];
+
+function isPublicPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return PUBLIC_PATHS.some(path => pathname.startsWith(path));
+}
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -14,49 +20,61 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true);
-
-  const { setAuth, clearAuth } = useAuthStore();
+  const [authState, setAuthState] = useState<'loading' | 'authenticated' | 'public'>('loading');
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkAuth = async () => {
-      // Allow public paths without auth
-      if (PUBLIC_PATHS.includes(pathname)) {
-        setIsChecking(false);
+      // Public paths - render without nav
+      if (isPublicPath(pathname)) {
+        if (!cancelled) setAuthState('public');
         return;
       }
 
-      // Validate session against server (checks HTTP-only cookie)
+      // Protected path - validate session
       const result = await validateSessionAction();
 
+      if (cancelled) return;
+
       if (!result.valid || !result.data) {
-        clearAuth();
+        useAuthStore.getState().clearAuth();
         router.push('/auth/login');
-        setIsChecking(false);
         return;
       }
 
-      // Sync Zustand store with session data
-      setAuth({
-        userSchema: result.data.userSchema,
+      // Valid session - set auth and show app with nav
+      useAuthStore.getState().setAuth({
         userName: result.data.userName,
         userEmail: result.data.userEmail,
       });
 
-      setIsChecking(false);
+      setAuthState('authenticated');
     };
 
+    setAuthState('loading');
     checkAuth();
-  }, [pathname, setAuth, clearAuth, router]);
 
-  // Show nothing while checking auth (prevents flash of protected content)
-  if (isChecking && !PUBLIC_PATHS.includes(pathname)) {
-    return (
-      <div className="auth-loading">
-        <p>Loading...</p>
-      </div>
-    );
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, router]);
+
+  // Loading state - show nothing
+  if (authState === 'loading') {
+    return null;
   }
 
-  return <>{children}</>;
+  // Public paths - render children without nav
+  if (authState === 'public') {
+    return <>{children}</>;
+  }
+
+  // Authenticated - render nav + children
+  return (
+    <>
+      <Nav />
+      {children}
+    </>
+  );
 }

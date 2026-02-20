@@ -13,8 +13,9 @@ vi.mock('next/navigation', () => ({
 // Mock Zustand store
 const mockSetAuth = vi.fn();
 vi.mock('@/stores', () => ({
-  useAuthStore: (selector: (state: { setAuth: typeof mockSetAuth }) => unknown) =>
-    selector({ setAuth: mockSetAuth }),
+  useAuthStore: {
+    getState: () => ({ setAuth: mockSetAuth }),
+  },
 }));
 
 // Mock server action
@@ -57,7 +58,6 @@ describe('LoginForm', () => {
     (loginUserAction as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true,
       data: {
-        userSchema: 'usr_1_abc',
         userName: 'testuser',
         userEmail: 'test@example.com',
       },
@@ -103,7 +103,6 @@ describe('LoginForm', () => {
 
   it('sets auth and redirects on successful login', async () => {
     const sessionData = {
-      userSchema: 'usr_1_abc',
       userName: 'testuser',
       userEmail: 'test@example.com',
     };

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Nav } from '@/components/layout'
 import { AuthProvider } from '@/components/auth'
 import './globals.css'
 
@@ -17,7 +16,6 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <Nav />
           {children}
         </AuthProvider>
       </body>
