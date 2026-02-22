@@ -1,5 +1,6 @@
 import { prisma } from '../prisma';
 import crypto from 'crypto';
+import { seedDefaultTaxonomies } from '../taxonomies';
 
 // =============================================================================
 // Tenant Schema Manager
@@ -167,6 +168,9 @@ export async function registerTenant(
 
   // Create the tenant's isolated schema with all tables
   await createTenantSchema(schemaName);
+
+  // Seed default taxonomies (topics) for the new tenant
+  await seedDefaultTaxonomies(schemaName);
 
   return {
     account,

@@ -1,28 +1,52 @@
+import { getIconDefinition } from '@/lib/icons';
+
 export interface TopicIconProps {
   icon: string | null;
+  color?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
 const sizeMap = {
-  sm: '1rem',
-  md: '1.5rem',
-  lg: '2rem',
+  sm: 16,
+  md: 20,
+  lg: 24,
 };
 
-export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps) {
-  if (!icon) return null;
-
+export function TopicIcon({ icon, color, size = 'md', className = '' }: TopicIconProps) {
+  const iconDef = icon ? getIconDefinition(icon) : null;
+  const pixelSize = sizeMap[size];
   const classes = ['topic-icon', className].filter(Boolean).join(' ');
 
+  // If no icon or invalid icon name, show colored dot fallback
+  if (!iconDef) {
+    return (
+      <span
+        className={classes}
+        style={{
+          display: 'inline-block',
+          width: pixelSize * 0.5,
+          height: pixelSize * 0.5,
+          borderRadius: '50%',
+          backgroundColor: color || '#6366f1',
+        }}
+        role="img"
+        aria-label="topic indicator"
+      />
+    );
+  }
+
   return (
-    <span
+    <svg
       className={classes}
-      style={{ fontSize: sizeMap[size] }}
+      width={pixelSize}
+      height={pixelSize}
+      viewBox={iconDef.viewBox}
+      fill={color || 'currentColor'}
       role="img"
       aria-label="topic icon"
     >
-      {icon}
-    </span>
+      <path d={iconDef.path} />
+    </svg>
   );
 }

@@ -11,14 +11,9 @@ describe('PostForm', () => {
     expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
   });
 
-  it('renders metadata section', () => {
+  it('renders topic selector', () => {
     render(<PostForm onSubmit={mockOnSubmit} />);
-    expect(screen.getByText('Metadata')).toBeInTheDocument();
-  });
-
-  it('renders add metadata button', () => {
-    render(<PostForm onSubmit={mockOnSubmit} />);
-    expect(screen.getByRole('button', { name: /add metadata field/i })).toBeInTheDocument();
+    expect(screen.getByText('Topic')).toBeInTheDocument();
   });
 
   it('renders submit button with default label', () => {
@@ -53,20 +48,6 @@ describe('PostForm', () => {
     expect(screen.getByLabelText(/content/i)).toHaveValue('Existing content');
   });
 
-  it('pre-fills metadata when post has metadata', () => {
-    const post: Post = {
-      id: 1,
-      content: 'Content',
-      metadata: { featured: true, category: 'tech' },
-      createdAt: new Date(),
-    };
-    render(<PostForm post={post} onSubmit={mockOnSubmit} />);
-    // Check that key-value inputs are rendered
-    const inputs = screen.getAllByRole('textbox');
-    // Content textarea + 4 inputs (2 key-value pairs × 2 inputs each)
-    expect(inputs.length).toBeGreaterThanOrEqual(5);
-  });
-
   it('includes hidden id field when editing', () => {
     const post: Post = {
       id: 42,
@@ -93,5 +74,104 @@ describe('PostForm', () => {
   it('applies post-form class', () => {
     const { container } = render(<PostForm onSubmit={mockOnSubmit} />);
     expect(container.querySelector('form')).toHaveClass('post-form');
+  });
+
+  it('does not show specialized fields when no taxonomy selected', () => {
+    render(<PostForm onSubmit={mockOnSubmit} />);
+    expect(screen.queryByText('Task Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Goal Settings')).not.toBeInTheDocument();
+  });
+
+  it('shows specialized fields when taxonomy with specialized fields is selected', () => {
+    const taxonomies = [
+      { id: 1, name: 'Task', icon: 'circle-check', color: '#ff0000' },
+    ];
+    render(
+      <PostForm
+        onSubmit={mockOnSubmit}
+        taxonomies={taxonomies}
+        initialTaxonomyId={1}
+      />
+    );
+    expect(screen.getByText('Task Settings')).toBeInTheDocument();
+  });
+
+  it('does not show specialized fields for taxonomy without them', () => {
+    const taxonomies = [
+      { id: 1, name: 'Idea', icon: 'lightbulb', color: '#ffcc00' },
+    ];
+    render(
+      <PostForm
+        onSubmit={mockOnSubmit}
+        taxonomies={taxonomies}
+        initialTaxonomyId={1}
+      />
+    );
+    expect(screen.queryByText('Task Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Event Details')).not.toBeInTheDocument();
+  });
+
+  it('shows custom fields section when no taxonomy selected', () => {
+    render(<PostForm onSubmit={mockOnSubmit} />);
+    expect(screen.getByText('Custom Fields')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add field/i })).toBeInTheDocument();
+  });
+
+  it('shows custom fields for taxonomy without specialized fields', () => {
+    const taxonomies = [
+      { id: 1, name: 'Quote', icon: 'quote-left', color: '#9900ff' },
+    ];
+    render(
+      <PostForm
+        onSubmit={mockOnSubmit}
+        taxonomies={taxonomies}
+        initialTaxonomyId={1}
+      />
+    );
+    expect(screen.getByText('Custom Fields')).toBeInTheDocument();
+  });
+
+  it('does not show custom fields section when specialized taxonomy selected', () => {
+    const taxonomies = [
+      { id: 1, name: 'Task', icon: 'circle-check', color: '#ff0000' },
+    ];
+    render(
+      <PostForm
+        onSubmit={mockOnSubmit}
+        taxonomies={taxonomies}
+        initialTaxonomyId={1}
+      />
+    );
+    expect(screen.queryByText('Custom Fields')).not.toBeInTheDocument();
+  });
+
+  it('shows existing custom metadata but filters out specialized fields', () => {
+    const post: Post = {
+      id: 1,
+      content: 'Content',
+      metadata: {
+        myCustomField: 'custom value',
+        startDate: '2025-01-01', // specialized field - should be filtered
+        notes: 'some notes', // specialized field - should be filtered
+      },
+      createdAt: new Date(),
+    };
+    const taxonomies = [
+      { id: 1, name: 'Quote', icon: 'quote-left', color: '#9900ff' },
+    ];
+    render(
+      <PostForm
+        post={post}
+        onSubmit={mockOnSubmit}
+        taxonomies={taxonomies}
+        initialTaxonomyId={1}
+      />
+    );
+    // Should show the custom field
+    expect(screen.getByDisplayValue('myCustomField')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('custom value')).toBeInTheDocument();
+    // Should NOT show specialized fields
+    expect(screen.queryByDisplayValue('startDate')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('notes')).not.toBeInTheDocument();
   });
 });

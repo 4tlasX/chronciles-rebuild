@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores';
 import { validateSessionAction } from '@/app/auth/actions';
-import { Nav } from '@/components/layout';
 
 const PUBLIC_PATHS = ['/auth/login', '/auth/signup'];
 
@@ -26,7 +25,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let cancelled = false;
 
     const checkAuth = async () => {
-      // Public paths - render without nav
+      // Public paths - render without auth check
       if (isPublicPath(pathname)) {
         if (!cancelled) setAuthState('public');
         return;
@@ -43,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      // Valid session - set auth and show app with nav
+      // Valid session - set auth state
       useAuthStore.getState().setAuth({
         userName: result.data.userName,
         userEmail: result.data.userEmail,
@@ -60,21 +59,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [pathname, router]);
 
-  // Loading state - show nothing
+  // Loading state
   if (authState === 'loading') {
     return null;
   }
 
-  // Public paths - render children without nav
-  if (authState === 'public') {
-    return <>{children}</>;
-  }
-
-  // Authenticated - render nav + children
-  return (
-    <>
-      <Nav />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

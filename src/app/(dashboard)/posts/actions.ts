@@ -12,17 +12,35 @@ export async function createPostAction(formData: FormData) {
 
   const content = formData.get('content') as string;
   const metadataStr = formData.get('metadata') as string;
+  const taxonomyId = formData.get('taxonomyId') as string;
+  const specializedMetadataStr = formData.get('specializedMetadata') as string;
 
   if (!content?.trim()) {
     return { error: 'Content is required' };
   }
 
-  let metadata = {};
+  // Start with generic metadata from key-value pairs
+  let metadata: Record<string, unknown> = {};
   if (metadataStr?.trim()) {
     try {
       metadata = JSON.parse(metadataStr);
     } catch {
       return { error: 'Invalid metadata JSON' };
+    }
+  }
+
+  // Add taxonomy ID to metadata if selected
+  if (taxonomyId) {
+    metadata._taxonomyId = parseInt(taxonomyId, 10);
+  }
+
+  // Merge specialized metadata if present
+  if (specializedMetadataStr?.trim()) {
+    try {
+      const specializedMetadata = JSON.parse(specializedMetadataStr);
+      metadata = { ...metadata, ...specializedMetadata };
+    } catch {
+      return { error: 'Invalid specialized metadata JSON' };
     }
   }
 
@@ -40,6 +58,8 @@ export async function updatePostAction(formData: FormData) {
   const id = parseInt(formData.get('id') as string, 10);
   const content = formData.get('content') as string;
   const metadataStr = formData.get('metadata') as string;
+  const taxonomyId = formData.get('taxonomyId') as string;
+  const specializedMetadataStr = formData.get('specializedMetadata') as string;
 
   if (!id) {
     return { error: 'Post ID is required' };
@@ -51,13 +71,33 @@ export async function updatePostAction(formData: FormData) {
     updates.content = content;
   }
 
+  // Start with generic metadata from key-value pairs
+  let metadata: Record<string, unknown> = {};
   if (metadataStr?.trim()) {
     try {
-      updates.metadata = JSON.parse(metadataStr);
+      metadata = JSON.parse(metadataStr);
     } catch {
       return { error: 'Invalid metadata JSON' };
     }
   }
+
+  // Add taxonomy ID to metadata if selected (or clear it if none selected)
+  if (taxonomyId) {
+    metadata._taxonomyId = parseInt(taxonomyId, 10);
+  }
+
+  // Merge specialized metadata if present
+  if (specializedMetadataStr?.trim()) {
+    try {
+      const specializedMetadata = JSON.parse(specializedMetadataStr);
+      metadata = { ...metadata, ...specializedMetadata };
+    } catch {
+      return { error: 'Invalid specialized metadata JSON' };
+    }
+  }
+
+  // Always update metadata (even if empty, to clear previous taxonomy)
+  updates.metadata = metadata;
 
   await updatePost(session.schemaName, id, updates);
   revalidatePath('/');
