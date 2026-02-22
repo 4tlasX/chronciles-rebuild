@@ -9,29 +9,39 @@ import type { Post, Taxonomy } from '@/lib/db';
 interface PostEditFormProps {
   post: Post;
   taxonomies?: Taxonomy[];
+  initialTaxonomyId?: number | null;
   inline?: boolean;
   onCancel?: () => void;
+  onSave?: () => void;
 }
 
-export function PostEditForm({ post, taxonomies = [], inline = false, onCancel }: PostEditFormProps) {
+export function PostEditForm({ post, taxonomies = [], initialTaxonomyId, inline = false, onCancel, onSave }: PostEditFormProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
     await updatePostAction(formData);
     setIsOpen(false);
+    onSave?.();
   };
 
   // Inline mode - always show the form directly
   if (inline) {
+    const handleInlineSubmit = async (formData: FormData) => {
+      await updatePostAction(formData);
+      onSave?.();
+    };
+
     return (
       <PostForm
         key={post.id}
         post={post}
         taxonomies={taxonomies}
-        onSubmit={updatePostAction}
+        initialTaxonomyId={initialTaxonomyId}
+        onSubmit={handleInlineSubmit}
         onCancel={onCancel}
         submitLabel="Save"
         isEditing
+        enterToSubmit
       />
     );
   }
@@ -50,6 +60,7 @@ export function PostEditForm({ post, taxonomies = [], inline = false, onCancel }
       <PostForm
         post={post}
         taxonomies={taxonomies}
+        initialTaxonomyId={initialTaxonomyId}
         onSubmit={handleSubmit}
         onCancel={() => setIsOpen(false)}
         submitLabel="Save"

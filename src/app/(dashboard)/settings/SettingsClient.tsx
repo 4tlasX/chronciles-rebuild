@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardTitle } from '@/components/card';
 import { FormGroup, Select, Toggle, ColorGrid, ImageGrid, Button } from '@/components/form';
@@ -8,13 +8,13 @@ import {
   AllSettings,
   FeatureKey,
   FEATURES,
-  HEADER_COLORS,
+  ACCENT_COLORS,
   BACKGROUND_IMAGES,
   TIMEZONES,
 } from '@/lib/settings';
 import {
   updateTimezoneAction,
-  updateHeaderColorAction,
+  updateAccentColorAction,
   updateBackgroundImageAction,
   toggleFeatureAction,
   signOutAction,
@@ -34,9 +34,30 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize store with server-fetched settings
+  // Refs for debouncing server actions
+  const accentColorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const backgroundImageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingAccentColorRef = useRef<string | null>(null);
+  const pendingBackgroundImageRef = useRef<string | null>(null);
+
+  // Initialize store with server-fetched settings and apply CSS variables
   useEffect(() => {
     setSettings(initialSettings);
+
+    // Apply initial CSS variables
+    if (initialSettings.accentColor) {
+      document.documentElement.style.setProperty('--accent-color', initialSettings.accentColor);
+      document.documentElement.style.setProperty('--accent-color-hover', adjustBrightness(initialSettings.accentColor, 20));
+    }
+    if (initialSettings.backgroundImage) {
+      document.documentElement.style.setProperty('--background-image', `url(${initialSettings.backgroundImage})`);
+    }
+
+    // Cleanup timeouts on unmount
+    return () => {
+      if (accentColorTimeoutRef.current) clearTimeout(accentColorTimeoutRef.current);
+      if (backgroundImageTimeoutRef.current) clearTimeout(backgroundImageTimeoutRef.current);
+    };
   }, [initialSettings, setSettings]);
 
   const handleTimezoneChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -55,50 +76,75 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     });
   };
 
-  const handleColorChange = (color: string) => {
-    const prevColor = userSettings.headerColor;
-
-    updateSettings({ headerColor: color });
+  const handleAccentColorChange = (color: string) => {
+    // Update UI immediately (optimistic)
+    updateSettings({ accentColor: color });
     setError(null);
+    document.documentElement.style.setProperty('--accent-color', color);
+    document.documentElement.style.setProperty('--accent-color-hover', adjustBrightness(color, 20));
 
-    // Update CSS variable immediately
-    document.documentElement.style.setProperty('--header-color', color);
+    // Store the pending value
+    pendingAccentColorRef.current = color;
 
-    startTransition(async () => {
-      const result = await updateHeaderColorAction(color);
-      if (result.error) {
-        updateSettings({ headerColor: prevColor });
-        document.documentElement.style.setProperty('--header-color', prevColor);
-        setError(result.error);
+    // Clear any existing timeout
+    if (accentColorTimeoutRef.current) {
+      clearTimeout(accentColorTimeoutRef.current);
+    }
+
+    // Debounce server action - wait 500ms before saving
+    accentColorTimeoutRef.current = setTimeout(() => {
+      const colorToSave = pendingAccentColorRef.current;
+      if (colorToSave) {
+        startTransition(async () => {
+          const result = await updateAccentColorAction(colorToSave);
+          if (result.error) {
+            setError(result.error);
+          }
+        });
       }
-    });
+    }, 500);
   };
 
-  const handleBackgroundChange = (image: string) => {
-    const prevImage = userSettings.backgroundImage;
+  // Helper to adjust color brightness for hover states
+  function adjustBrightness(hex: string, percent: number): string {
+    if (!hex.startsWith('#')) return hex;
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + Math.round(2.55 * percent)));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + Math.round(2.55 * percent)));
+    const b = Math.min(255, Math.max(0, (num & 0x0000ff) + Math.round(2.55 * percent)));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
 
+  const handleBackgroundChange = (image: string) => {
+    // Update UI immediately (optimistic)
     updateSettings({ backgroundImage: image });
     setError(null);
-
-    // Update CSS variable immediately
     if (image) {
       document.documentElement.style.setProperty('--background-image', `url(${image})`);
     } else {
       document.documentElement.style.setProperty('--background-image', 'none');
     }
 
-    startTransition(async () => {
-      const result = await updateBackgroundImageAction(image);
-      if (result.error) {
-        updateSettings({ backgroundImage: prevImage });
-        if (prevImage) {
-          document.documentElement.style.setProperty('--background-image', `url(${prevImage})`);
-        } else {
-          document.documentElement.style.setProperty('--background-image', 'none');
-        }
-        setError(result.error);
+    // Store the pending value
+    pendingBackgroundImageRef.current = image;
+
+    // Clear any existing timeout
+    if (backgroundImageTimeoutRef.current) {
+      clearTimeout(backgroundImageTimeoutRef.current);
+    }
+
+    // Debounce server action - wait 500ms before saving
+    backgroundImageTimeoutRef.current = setTimeout(() => {
+      const imageToSave = pendingBackgroundImageRef.current;
+      if (imageToSave !== null) {
+        startTransition(async () => {
+          const result = await updateBackgroundImageAction(imageToSave);
+          if (result.error) {
+            setError(result.error);
+          }
+        });
       }
-    });
+    }, 500);
   };
 
   const handleFeatureToggle = (feature: FeatureKey, enabled: boolean) => {
@@ -131,7 +177,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     label: tz.label,
   }));
 
-  const colorOptions = HEADER_COLORS.map((c) => ({
+  const accentColorOptions = ACCENT_COLORS.map((c) => ({
     value: c.value,
     label: c.label,
   }));
@@ -182,11 +228,11 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
       {/* Theme */}
       <Card>
         <CardTitle>Theme</CardTitle>
-        <FormGroup label="Header Color">
+        <FormGroup label="Accent Color">
           <ColorGrid
-            options={colorOptions}
-            value={userSettings.headerColor}
-            onChange={handleColorChange}
+            options={accentColorOptions}
+            value={userSettings.accentColor}
+            onChange={handleAccentColorChange}
             disabled={isPending}
           />
         </FormGroup>

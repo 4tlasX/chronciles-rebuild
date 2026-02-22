@@ -8,14 +8,19 @@ describe('TopicContent', () => {
     expect(screen.getByText('Technology')).toBeInTheDocument();
   });
 
-  it('renders icon when provided', () => {
-    render(<TopicContent name="Tech" icon="💻" />);
-    expect(screen.getByText('💻')).toBeInTheDocument();
+  it('renders SVG icon when valid icon name provided', () => {
+    const { container } = render(<TopicContent name="Tech" icon="code" />);
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+    expect(svg).toHaveAttribute('role', 'img');
   });
 
-  it('does not render icon when null', () => {
-    render(<TopicContent name="Tech" icon={null} />);
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  it('renders dot fallback when icon is null', () => {
+    const { container } = render(<TopicContent name="Tech" icon={null} />);
+    // When icon is null, TopicIcon renders a dot fallback
+    const dot = container.querySelector('.topic-icon');
+    expect(dot).toBeInTheDocument();
+    expect(dot?.tagName.toLowerCase()).toBe('span');
   });
 
   it('renders color swatch when color provided', () => {
@@ -45,10 +50,12 @@ describe('TopicContent', () => {
 
   it('renders all elements together', () => {
     const { container } = render(
-      <TopicContent name="Science" icon="🔬" color="#00FF00" showId={123} />
+      <TopicContent name="Science" icon="flask" color="#00FF00" showId={123} />
     );
     expect(screen.getByText('Science')).toBeInTheDocument();
-    expect(screen.getByText('🔬')).toBeInTheDocument();
+    // Icon renders as SVG
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
     expect(container.querySelector('.color-swatch')).toBeInTheDocument();
     expect(screen.getByText('ID: 123')).toBeInTheDocument();
   });

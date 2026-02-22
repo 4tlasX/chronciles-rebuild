@@ -17,43 +17,43 @@ describe('PostEditForm', () => {
   };
 
   it('renders edit button initially', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
   it('does not show form initially', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     expect(screen.queryByLabelText(/content/i)).not.toBeInTheDocument();
   });
 
   it('shows form when edit button is clicked', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
   });
 
   it('pre-fills form with post content', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     expect(screen.getByLabelText(/content/i)).toHaveValue('Test content');
   });
 
   it('shows cancel button when form is open', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
   });
 
   it('hides form when cancel is clicked', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+    render(<PostEditForm post={mockPost} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByLabelText(/content/i)).not.toBeInTheDocument();
   });
 
-  it('shows save changes button', () => {
-    render(<PostEditForm post={mockPost} email="test@example.com" />);
+  it('shows save button', () => {
+    render(<PostEditForm post={mockPost} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
   });
 });

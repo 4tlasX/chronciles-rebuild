@@ -6,9 +6,10 @@ import type { Taxonomy } from '@/lib/db';
 describe('TaxonomySelector', () => {
   const mockOnChange = vi.fn();
 
+  // Use taxonomies that don't match feature taxonomy names to avoid filtering
   const mockTaxonomies: Taxonomy[] = [
     { id: 1, name: 'Task', icon: 'clipboard-list', color: '#3b82f6' },
-    { id: 2, name: 'Goal', icon: 'bullseye', color: '#10b981' },
+    { id: 2, name: 'Work', icon: 'briefcase', color: '#10b981' },
     { id: 3, name: 'Event', icon: 'calendar', color: '#f59e0b' },
     { id: 4, name: 'Meeting', icon: 'users', color: '#8b5cf6' },
   ];
@@ -23,6 +24,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -36,6 +38,7 @@ describe('TaxonomySelector', () => {
         selectedId={null}
         onChange={mockOnChange}
         placeholder="Select a topic..."
+        showAllTaxonomies
       />
     );
 
@@ -49,6 +52,7 @@ describe('TaxonomySelector', () => {
         selectedId={null}
         onChange={mockOnChange}
         placeholder="Choose category"
+        showAllTaxonomies
       />
     );
 
@@ -61,6 +65,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={1}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -73,6 +78,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -87,13 +93,14 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
     fireEvent.click(screen.getByRole('button'));
 
     expect(screen.getByText('Task')).toBeInTheDocument();
-    expect(screen.getByText('Goal')).toBeInTheDocument();
+    expect(screen.getByText('Work')).toBeInTheDocument();
     expect(screen.getByText('Event')).toBeInTheDocument();
     expect(screen.getByText('Meeting')).toBeInTheDocument();
   });
@@ -104,6 +111,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -118,6 +126,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -133,6 +142,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={1}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -148,6 +158,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -165,6 +176,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -179,6 +191,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -188,7 +201,7 @@ describe('TaxonomySelector', () => {
     });
 
     expect(screen.getByText('Task')).toBeInTheDocument();
-    expect(screen.queryByText('Goal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Work')).not.toBeInTheDocument();
     expect(screen.queryByText('Event')).not.toBeInTheDocument();
   });
 
@@ -198,6 +211,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -215,6 +229,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -232,6 +247,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={1}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -249,6 +265,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -265,7 +282,7 @@ describe('TaxonomySelector', () => {
     fireEvent.click(screen.getByRole('button'));
 
     // Search should be cleared, all options visible
-    expect(screen.getByText('Goal')).toBeInTheDocument();
+    expect(screen.getByText('Work')).toBeInTheDocument();
   });
 
   it('toggles dropdown open/closed on trigger click', () => {
@@ -274,6 +291,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -294,6 +312,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -311,6 +330,7 @@ describe('TaxonomySelector', () => {
         taxonomies={mockTaxonomies}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 
@@ -323,6 +343,7 @@ describe('TaxonomySelector', () => {
         taxonomies={[]}
         selectedId={null}
         onChange={mockOnChange}
+        showAllTaxonomies
       />
     );
 

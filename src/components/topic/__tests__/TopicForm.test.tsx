@@ -16,11 +16,6 @@ describe('TopicForm', () => {
     expect(screen.getByLabelText(/icon/i)).toBeInTheDocument();
   });
 
-  it('renders color input', () => {
-    render(<TopicForm onSubmit={mockOnSubmit} />);
-    expect(screen.getByLabelText(/color/i)).toBeInTheDocument();
-  });
-
   it('renders submit button with default label', () => {
     render(<TopicForm onSubmit={mockOnSubmit} />);
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
@@ -46,12 +41,12 @@ describe('TopicForm', () => {
     const topic: Taxonomy = {
       id: 1,
       name: 'Technology',
-      icon: '💻',
+      icon: 'code',
       color: '#3B82F6',
     };
     render(<TopicForm topic={topic} onSubmit={mockOnSubmit} />);
     expect(screen.getByLabelText(/name/i)).toHaveValue('Technology');
-    expect(screen.getByLabelText(/icon/i)).toHaveValue('💻');
+    expect(screen.getByLabelText(/icon/i)).toHaveValue('code');
   });
 
   it('includes hidden id field when editing', () => {

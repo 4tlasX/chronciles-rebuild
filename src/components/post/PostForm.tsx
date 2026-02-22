@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { FormGroup, FormRow, Textarea, Button, KeyValueList } from '@/components/form';
 import type { KeyValuePairData } from '@/components/form';
 import { TaxonomySelector } from '@/components/topic';
@@ -40,6 +40,7 @@ export interface PostFormProps {
   onCancel?: () => void;
   submitLabel?: string;
   isEditing?: boolean;
+  enterToSubmit?: boolean;
 }
 
 // Extract custom (non-specialized) metadata as key-value pairs
@@ -78,7 +79,9 @@ export function PostForm({
   onSubmit,
   onCancel,
   submitLabel = 'Save',
+  enterToSubmit = false,
 }: PostFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   // Selected taxonomy state
   const [selectedTaxonomy, setSelectedTaxonomy] = useState<Taxonomy | null>(() => {
     if (initialTaxonomyId) {
@@ -142,8 +145,14 @@ export function PostForm({
 
   const taxonomyName = selectedTaxonomy?.name || null;
 
+  const handleEnterSubmit = () => {
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
+  };
+
   return (
-    <form action={handleSubmit} className="post-form">
+    <form ref={formRef} action={handleSubmit} className="post-form">
       {post && <input type="hidden" name="id" value={post.id} />}
 
       <FormRow>
@@ -165,6 +174,7 @@ export function PostForm({
             placeholder="Write your post content..."
             defaultValue={post?.content ?? ''}
             required
+            onEnterSubmit={enterToSubmit ? handleEnterSubmit : undefined}
           />
         </FormGroup>
       </FormRow>

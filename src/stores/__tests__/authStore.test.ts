@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '../authStore';
+import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 describe('authStore', () => {
   beforeEach(() => {
@@ -8,7 +9,7 @@ describe('authStore', () => {
       isAuthenticated: false,
       userName: null,
       userEmail: null,
-      userSettings: {},
+      userSettings: { ...DEFAULT_SETTINGS },
     });
   });
 
@@ -24,9 +25,9 @@ describe('authStore', () => {
       expect(state.userEmail).toBeNull();
     });
 
-    it('starts with empty settings', () => {
+    it('starts with default settings', () => {
       const state = useAuthStore.getState();
-      expect(state.userSettings).toEqual({});
+      expect(state.userSettings).toEqual(DEFAULT_SETTINGS);
     });
   });
 
@@ -43,15 +44,17 @@ describe('authStore', () => {
       expect(state.userEmail).toBe('test@example.com');
     });
 
-    it('sets user settings when provided', () => {
+    it('merges user settings with defaults when provided', () => {
       useAuthStore.getState().setAuth({
         userName: 'testuser',
         userEmail: 'test@example.com',
-        userSettings: { theme: 'dark' },
+        userSettings: { accentColor: '#ff0000' },
       });
 
       const state = useAuthStore.getState();
-      expect(state.userSettings).toEqual({ theme: 'dark' });
+      // Should merge with defaults
+      expect(state.userSettings.accentColor).toBe('#ff0000');
+      expect(state.userSettings.timezone).toBe(DEFAULT_SETTINGS.timezone);
     });
   });
 
@@ -61,7 +64,7 @@ describe('authStore', () => {
       useAuthStore.getState().setAuth({
         userName: 'testuser',
         userEmail: 'test@example.com',
-        userSettings: { theme: 'dark' },
+        userSettings: { accentColor: '#ff0000' },
       });
 
       // Then clear
@@ -71,24 +74,26 @@ describe('authStore', () => {
       expect(state.isAuthenticated).toBe(false);
       expect(state.userName).toBeNull();
       expect(state.userEmail).toBeNull();
-      expect(state.userSettings).toEqual({});
+      expect(state.userSettings).toEqual(DEFAULT_SETTINGS);
     });
   });
 
   describe('updateSettings', () => {
     it('updates user settings', () => {
-      useAuthStore.getState().updateSettings({ theme: 'dark', language: 'en' });
+      useAuthStore.getState().updateSettings({ accentColor: '#ff0000' });
 
       const state = useAuthStore.getState();
-      expect(state.userSettings).toEqual({ theme: 'dark', language: 'en' });
+      expect(state.userSettings.accentColor).toBe('#ff0000');
     });
 
-    it('replaces existing settings', () => {
-      useAuthStore.getState().updateSettings({ theme: 'dark' });
-      useAuthStore.getState().updateSettings({ language: 'en' });
+    it('merges with existing settings', () => {
+      useAuthStore.getState().updateSettings({ accentColor: '#ff0000' });
+      useAuthStore.getState().updateSettings({ timezone: 'America/New_York' });
 
       const state = useAuthStore.getState();
-      expect(state.userSettings).toEqual({ language: 'en' });
+      // Both updates should be preserved
+      expect(state.userSettings.accentColor).toBe('#ff0000');
+      expect(state.userSettings.timezone).toBe('America/New_York');
     });
   });
 });

@@ -7,7 +7,7 @@ describe('TopicTag', () => {
   const mockTopic: Taxonomy = {
     id: 1,
     name: 'JavaScript',
-    icon: '📜',
+    icon: 'code',
     color: '#F7DF1E',
   };
 
@@ -16,9 +16,11 @@ describe('TopicTag', () => {
     expect(screen.getByText('JavaScript')).toBeInTheDocument();
   });
 
-  it('renders topic icon', () => {
-    render(<TopicTag topic={mockTopic} />);
-    expect(screen.getByText('📜')).toBeInTheDocument();
+  it('renders topic icon as SVG', () => {
+    const { container } = render(<TopicTag topic={mockTopic} />);
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+    expect(svg).toHaveAttribute('role', 'img');
   });
 
   it('applies tag class', () => {
@@ -31,21 +33,28 @@ describe('TopicTag', () => {
     expect(container.firstChild).toHaveClass('tag', 'custom');
   });
 
-  it('applies background color when topic has color', () => {
+  it('renders icon using accent color (no inline background)', () => {
     const { container } = render(<TopicTag topic={mockTopic} />);
-    expect(container.firstChild).toHaveStyle({ backgroundColor: '#F7DF1E' });
+    const svg = container.querySelector('svg');
+    // TopicTag now uses TopicIcon which fills with accent color
+    expect(svg).toHaveAttribute('fill', 'var(--accent-color)');
   });
 
-  it('does not apply inline styles when topic has no color', () => {
+  it('does not apply inline backgroundColor styles', () => {
     const topicNoColor: Taxonomy = { ...mockTopic, color: null };
     const { container } = render(<TopicTag topic={topicNoColor} />);
-    expect(container.firstChild).not.toHaveStyle({ backgroundColor: '#F7DF1E' });
+    const tag = container.firstChild as HTMLElement;
+    // TopicTag no longer applies background color
+    expect(tag.style.backgroundColor).toBe('');
   });
 
-  it('renders without icon when icon is null', () => {
+  it('renders dot fallback when icon is null', () => {
     const topicNoIcon: Taxonomy = { ...mockTopic, icon: null };
-    render(<TopicTag topic={topicNoIcon} />);
+    const { container } = render(<TopicTag topic={topicNoIcon} />);
     expect(screen.getByText('JavaScript')).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    // When icon is null, TopicIcon renders a dot fallback
+    const dot = container.querySelector('.topic-icon');
+    expect(dot).toBeInTheDocument();
+    expect(dot?.tagName.toLowerCase()).toBe('span');
   });
 });

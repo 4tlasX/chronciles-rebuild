@@ -86,9 +86,9 @@ export async function updateTimezoneAction(
 }
 
 /**
- * Update header color setting
+ * Update accent color setting
  */
-export async function updateHeaderColorAction(
+export async function updateAccentColorAction(
   color: string
 ): Promise<{ error?: string }> {
   const session = await getServerSession();
@@ -97,12 +97,12 @@ export async function updateHeaderColorAction(
   }
 
   try {
-    await upsertSetting(session.schemaName, 'headerColor', color);
-    revalidatePath('/settings');
+    await upsertSetting(session.schemaName, 'accentColor', color);
+    // No revalidatePath - we use optimistic updates for instant feedback
     return {};
   } catch (error) {
-    console.error('Failed to update header color:', error);
-    return { error: 'Failed to update header color' };
+    console.error('Failed to update accent color:', error);
+    return { error: 'Failed to update accent color' };
   }
 }
 
@@ -119,7 +119,7 @@ export async function updateBackgroundImageAction(
 
   try {
     await upsertSetting(session.schemaName, 'backgroundImage', image);
-    revalidatePath('/settings');
+    // No revalidatePath - we use optimistic updates for instant feedback
     return {};
   } catch (error) {
     console.error('Failed to update background image:', error);

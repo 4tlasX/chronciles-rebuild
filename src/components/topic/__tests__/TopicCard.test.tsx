@@ -7,7 +7,7 @@ describe('TopicCard', () => {
   const mockTopic: Taxonomy = {
     id: 1,
     name: 'Technology',
-    icon: '💻',
+    icon: 'code',
     color: '#3B82F6',
   };
 
@@ -16,9 +16,11 @@ describe('TopicCard', () => {
     expect(screen.getByText('Technology')).toBeInTheDocument();
   });
 
-  it('renders topic icon', () => {
-    render(<TopicCard topic={mockTopic} />);
-    expect(screen.getByText('💻')).toBeInTheDocument();
+  it('renders topic icon as SVG', () => {
+    const { container } = render(<TopicCard topic={mockTopic} />);
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+    expect(svg).toHaveAttribute('role', 'img');
   });
 
   it('renders topic ID', () => {
@@ -48,9 +50,12 @@ describe('TopicCard', () => {
 
   it('handles topic without icon', () => {
     const topicNoIcon: Taxonomy = { ...mockTopic, icon: null };
-    render(<TopicCard topic={topicNoIcon} />);
+    const { container } = render(<TopicCard topic={topicNoIcon} />);
     expect(screen.getByText('Technology')).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    // When icon is null, TopicIcon renders a dot fallback
+    const dot = container.querySelector('.topic-icon');
+    expect(dot).toBeInTheDocument();
+    expect(dot?.tagName.toLowerCase()).toBe('span');
   });
 
   it('handles topic without color', () => {

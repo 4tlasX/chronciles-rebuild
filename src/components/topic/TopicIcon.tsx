@@ -12,8 +12,8 @@ const sizeMap = {
   lg: 24,
 };
 
-// Use CSS variable for accent color
-const ACCENT_COLOR = 'var(--accent-color, #00b4d8)';
+// Use CSS variable for accent color (defined in :root in globals.css)
+const ACCENT_COLOR = 'var(--accent-color)';
 
 export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps) {
   const iconDef = icon ? getIconDefinition(icon) : null;

@@ -17,7 +17,7 @@ export interface FeatureSettings {
 
 export interface PreferenceSettings {
   timezone: string;
-  headerColor: string;
+  accentColor: string;
   backgroundImage: string;
 }
 
@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   allergiesEnabled: false,
   // User preferences
   timezone: 'UTC',
-  headerColor: '#2d2c2a',
+  accentColor: '#80deea', // Material Design Cyan 200
   backgroundImage: '',
 };
 
@@ -110,7 +110,7 @@ export const FEATURES: FeatureDefinition[] = [
 ];
 
 // =============================================================================
-// Header Color Options
+// Accent Color Options
 // =============================================================================
 
 export interface ColorOption {
@@ -118,25 +118,27 @@ export interface ColorOption {
   label: string;
 }
 
-export const HEADER_COLORS: ColorOption[] = [
-  { value: '#2d2c2a', label: 'Dark' },
-  { value: '#003D73', label: 'Navy' },
-  { value: '#E6B062', label: 'Gold' },
-  { value: '#EF8070', label: 'Coral' },
-  { value: '#46A99B', label: 'Teal' },
-  { value: '#4281A4', label: 'Steel Blue' },
-  { value: '#48A9A6', label: 'Verdigris' },
-  { value: '#D4B483', label: 'Tan' },
-  { value: '#C1666B', label: 'Rose' },
-  { value: '#582C4D', label: 'Plum' },
-  { value: '#474973', label: 'Purple' },
-  { value: '#161B33', label: 'Midnight' },
-  { value: '#0D0C1D', label: 'Black' },
-  { value: '#5F0F40', label: 'Burgundy' },
-  { value: '#9A031E', label: 'Ruby' },
-  { value: '#E36414', label: 'Orange' },
-  { value: '#0F4C5C', label: 'Deep Teal' },
-  { value: 'transparent', label: 'Transparent' },
+// Material Design 200 colors
+export const ACCENT_COLORS: ColorOption[] = [
+  { value: '#ef9a9a', label: 'Red' },
+  { value: '#f48fb1', label: 'Pink' },
+  { value: '#ce93d8', label: 'Purple' },
+  { value: '#b39ddb', label: 'Deep Purple' },
+  { value: '#9fa8da', label: 'Indigo' },
+  { value: '#90caf9', label: 'Blue' },
+  { value: '#81d4fa', label: 'Light Blue' },
+  { value: '#80deea', label: 'Cyan' },
+  { value: '#80cbc4', label: 'Teal' },
+  { value: '#a5d6a7', label: 'Green' },
+  { value: '#c5e1a5', label: 'Light Green' },
+  { value: '#e6ee9c', label: 'Lime' },
+  { value: '#fff59d', label: 'Yellow' },
+  { value: '#ffe082', label: 'Amber' },
+  { value: '#ffcc80', label: 'Orange' },
+  { value: '#ffab91', label: 'Deep Orange' },
+  { value: '#bcaaa4', label: 'Brown' },
+  { value: '#eeeeee', label: 'Grey' },
+  { value: '#b0bec5', label: 'Blue Grey' },
 ];
 
 // =============================================================================

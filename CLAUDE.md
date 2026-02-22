@@ -294,3 +294,39 @@ npm run db:push      # Push schema to database
 npm run db:migrate   # Run migrations
 npm run db:studio    # Open Prisma Studio
 ```
+
+---
+
+## Theming
+
+### CSS Variables (src/app/globals.css)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--header-color` | `#2d2c2a` | Header/sidebar background |
+| `--header-color-hover` | `#3d3c3a` | Header hover state |
+| `--accent-color` | `#00b4d8` | Primary accent color (user-configurable in Settings) |
+| `--accent-color-hover` | `#00a0c0` | Accent hover state (auto-calculated) |
+| `--background-image` | `none` | Optional background image |
+
+**User-configurable colors** (Settings > Theme):
+- Header Color: 18 preset colors
+- Accent Color: 16 preset colors (controls all icons and highlights)
+- Background Image: 28 Unsplash images
+
+### Accent Color Usage
+
+The `--accent-color` variable controls all highlights and icons throughout the app:
+
+- **All icons**: Sidebar nav icons, panel header buttons, topic icons (all use accent color with varying opacity)
+- **Sidebar**: Navigation icons at 50% opacity (75% hover, 100% active)
+- **Panel headers**: Add/edit/delete button icons
+- **Topic icons**: SVG fill color (via `TopicIcon` component)
+- **Post list**: Active/selected post title color
+- **Topic list**: Active topic name, count badge, and background
+- **Buttons**: Primary button background (`.btn-primary`)
+- **Forms**: Input/textarea focus border and ring, toggle switch on-state
+- **Selectors**: Color grid and image grid selected borders
+- **Taxonomy selector**: Focus state, selected option highlight
+- **Links**: Auth page links
+- **Metadata**: Post metadata key highlighting

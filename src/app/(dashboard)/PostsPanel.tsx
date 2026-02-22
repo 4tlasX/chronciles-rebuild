@@ -97,19 +97,33 @@ export function PostsPanel({ posts, taxonomies }: PostsPanelProps) {
 
       {/* Content Panel */}
       <div className="panel panel-content-area">
-        {selectedPost && !isEditing ? (
+        {selectedPostId === null ? (
+          <>
+            <div className="panel-header">
+              <h2>New Post</h2>
+            </div>
+            <div className="panel-body panel-body-padded">
+              <PostCreateForm taxonomies={taxonomies} inline onSave={handleCancelEdit} />
+            </div>
+          </>
+        ) : selectedPost ? (
           <>
             <div className="panel-body">
-              <PostView post={selectedPost} taxonomy={selectedPostTaxonomy} />
+              <div className="post-inline-edit" onClick={!isEditing ? handleEdit : undefined}>
+                {isEditing ? (
+                  <PostEditForm
+                    post={selectedPost}
+                    taxonomies={taxonomies}
+                    inline
+                    onCancel={handleCancelEdit}
+                    onSave={handleCancelEdit}
+                  />
+                ) : (
+                  <PostView post={selectedPost} taxonomy={selectedPostTaxonomy} />
+                )}
+              </div>
             </div>
             <div className="panel-actions">
-              <button className="panel-action-btn" onClick={handleEdit}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Edit
-              </button>
               <button
                 className="panel-action-btn panel-action-btn-danger"
                 onClick={handleDelete}
@@ -123,25 +137,7 @@ export function PostsPanel({ posts, taxonomies }: PostsPanelProps) {
               </button>
             </div>
           </>
-        ) : (
-          <>
-            <div className="panel-header">
-              <h2>{selectedPost ? 'Edit Post' : 'New Post'}</h2>
-            </div>
-            <div className="panel-body panel-body-padded">
-              {selectedPost ? (
-                <PostEditForm
-                  post={selectedPost}
-                  taxonomies={taxonomies}
-                  inline
-                  onCancel={handleCancelEdit}
-                />
-              ) : (
-                <PostCreateForm taxonomies={taxonomies} inline />
-              )}
-            </div>
-          </>
-        )}
+        ) : null}
       </div>
     </div>
   );

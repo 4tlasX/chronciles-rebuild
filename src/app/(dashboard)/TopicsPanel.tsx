@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import type { Post, Taxonomy } from '@/lib/db';
 import { TopicListItem, TopicIcon, TopicForm } from '@/components/topic';
-import { PostListItem, PostView, PostForm } from '@/components/post';
+import { PostListItem, PostView } from '@/components/post';
+import { PostEditForm } from './posts/PostEditForm';
 import { createTopicAction, updateTopicAction, deleteTopicAction } from './topics/actions';
-import { updatePostAction, deletePostAction } from './posts/actions';
+import { deletePostAction } from './posts/actions';
 
 interface TopicsPanelProps {
   topics: Taxonomy[];
@@ -65,11 +66,6 @@ export function TopicsPanel({ topics, posts }: TopicsPanelProps) {
   };
 
   const editingTopic = editingTopicId ? topics.find(t => t.id === editingTopicId) : null;
-
-  const handleUpdatePost = async (formData: FormData) => {
-    await updatePostAction(formData);
-    setIsEditingPost(false);
-  };
 
   const handleDeletePost = async () => {
     if (!selectedPost) return;
@@ -202,46 +198,34 @@ export function TopicsPanel({ topics, posts }: TopicsPanelProps) {
       <div className="panel panel-content-area">
         {selectedPost ? (
           <>
-            {isEditingPost ? (
-              <div className="panel-body panel-body-padded">
-                <PostForm
-                  post={selectedPost}
-                  taxonomies={topics}
-                  initialTaxonomyId={selectedTopicId}
-                  onSubmit={handleUpdatePost}
-                  onCancel={() => setIsEditingPost(false)}
-                  submitLabel="Save"
-                />
+            <div className="panel-body">
+              <div className="post-inline-edit" onClick={!isEditingPost ? () => setIsEditingPost(true) : undefined}>
+                {isEditingPost ? (
+                  <PostEditForm
+                    post={selectedPost}
+                    taxonomies={topics}
+                    initialTaxonomyId={selectedTopicId}
+                    inline
+                    onCancel={() => setIsEditingPost(false)}
+                    onSave={() => setIsEditingPost(false)}
+                  />
+                ) : (
+                  <PostView post={selectedPost} taxonomy={selectedTopic} />
+                )}
               </div>
-            ) : (
-              <div className="panel-body">
-                <PostView post={selectedPost} taxonomy={selectedTopic} />
-              </div>
-            )}
-            {!isEditingPost && (
-              <div className="panel-actions">
-                <button
-                  className="panel-action-btn"
-                  onClick={() => setIsEditingPost(true)}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Edit
-                </button>
-                <button
-                  className="panel-action-btn panel-action-btn-danger"
-                  onClick={handleDeletePost}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
-                  Delete
-                </button>
-              </div>
-            )}
+            </div>
+            <div className="panel-actions">
+              <button
+                className="panel-action-btn panel-action-btn-danger"
+                onClick={handleDeletePost}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                Delete
+              </button>
+            </div>
           </>
         ) : (
           <div className="panel-content">

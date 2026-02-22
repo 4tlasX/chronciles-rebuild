@@ -26,7 +26,7 @@ export function PostView({ post, taxonomy }: PostViewProps) {
       <header className="post-view-header">
         {taxonomy && (
           <div className="post-view-topic">
-            <TopicTag name={taxonomy.name} icon={taxonomy.icon} color={taxonomy.color} />
+            <TopicTag name={taxonomy.name} icon={taxonomy.icon} />
           </div>
         )}
         <h1 className="post-view-title">{title}</h1>
