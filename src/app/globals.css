@@ -1,3 +1,22 @@
+/* =============================================================================
+   Theme CSS Variables
+   ============================================================================= */
+
+:root {
+  /* Theme colors (can be overridden by user settings) */
+  --header-color: #2d2c2a;
+  --header-color-hover: #3d3c3a;
+  --accent-color: #00b4d8;
+  --accent-color-hover: #00a0c0;
+
+  /* Background image (empty by default) */
+  --background-image: none;
+}
+
+/* =============================================================================
+   Base Styles
+   ============================================================================= */
+
 * {
   box-sizing: border-box;
   padding: 0;
@@ -22,6 +41,23 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Background image overlay when set */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--background-image);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  opacity: 0.15;
+  z-index: -1;
+  pointer-events: none;
+}
+
 /* =============================================================================
    App Layout (Sidebar + Main)
    ============================================================================= */
@@ -43,21 +79,22 @@ body {
 /* Top Header */
 .app-header {
   height: 64px;
-  background: rgba(10, 10, 10, 0.95);
-  border-bottom: 1px solid #1a1a1a;
+  background: #121111;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   position: sticky;
   top: 0;
   z-index: 50;
+  transition: background-color 0.2s ease;
 }
 
 .app-logo {
   font-size: 1.3rem;
   font-weight: 300;
   letter-spacing: 0.2em;
-  color: #808080;
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
 }
 
@@ -596,6 +633,185 @@ body {
 .form-radio-label {
   font-size: 0.9rem;
   color: #e0e0e0;
+}
+
+/* Toggle Switch */
+.form-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.form-toggle-wrapper:last-child {
+  border-bottom: none;
+}
+
+.form-toggle-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-toggle-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.form-toggle-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #c0c0c0;
+}
+
+.form-toggle-description {
+  font-size: 0.75rem;
+  color: #606060;
+}
+
+.form-toggle-switch-wrapper {
+  flex-shrink: 0;
+}
+
+.form-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  background: #252525;
+  border-radius: 10px;
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.form-toggle-switch-on {
+  background: #00b4d8;
+}
+
+.form-toggle-knob {
+  width: 16px;
+  height: 16px;
+  background: #c0c0c0;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.form-toggle-switch-on .form-toggle-knob {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+/* Color Grid */
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.color-grid-item {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.color-grid-item:hover {
+  transform: scale(1.1);
+}
+
+.color-grid-item-selected {
+  border-color: #00b4d8;
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.3);
+}
+
+.color-grid-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.color-grid-transparent {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
+              linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+  border-radius: 2px;
+}
+
+/* Image Grid */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.image-grid-item {
+  aspect-ratio: 16/9;
+  border-radius: 4px;
+  border: 2px solid #1a1a1a;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  background: #0d0d0d;
+  padding: 0;
+}
+
+.image-grid-item:hover {
+  border-color: #303030;
+}
+
+.image-grid-item-selected {
+  border-color: #00b4d8;
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.3);
+}
+
+.image-grid-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-grid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-grid-none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.65rem;
+  color: #505050;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* =============================================================================

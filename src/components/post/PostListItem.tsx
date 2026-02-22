@@ -30,8 +30,8 @@ export function PostListItem({ post, taxonomy, isActive = false, onClick }: Post
     >
       <div className="post-list-item-header">
         {taxonomy && (
-          <span className="post-list-item-topic" style={{ color: taxonomy.color || undefined }}>
-            <TopicIcon icon={taxonomy.icon} color={taxonomy.color} size="sm" />
+          <span className="post-list-item-topic">
+            <TopicIcon icon={taxonomy.icon} size="sm" />
           </span>
         )}
         <div className="post-list-item-title">{title}</div>

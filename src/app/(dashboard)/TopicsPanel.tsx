@@ -133,7 +133,7 @@ export function TopicsPanel({ topics, posts }: TopicsPanelProps) {
           <>
             <div className="panel-header">
               <div className="panel-header-topic">
-                <TopicIcon icon={selectedTopic.icon} color={selectedTopic.color} size="md" />
+                <TopicIcon icon={selectedTopic.icon} size="md" />
                 <h2>{selectedTopic.name}</h2>
               </div>
               <div className="panel-header-actions">

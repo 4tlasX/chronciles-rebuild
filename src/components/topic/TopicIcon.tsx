@@ -2,7 +2,6 @@ import { getIconDefinition } from '@/lib/icons';
 
 export interface TopicIconProps {
   icon: string | null;
-  color?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -13,12 +12,15 @@ const sizeMap = {
   lg: 24,
 };
 
-export function TopicIcon({ icon, color, size = 'md', className = '' }: TopicIconProps) {
+// Use CSS variable for accent color
+const ACCENT_COLOR = 'var(--accent-color, #00b4d8)';
+
+export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps) {
   const iconDef = icon ? getIconDefinition(icon) : null;
   const pixelSize = sizeMap[size];
   const classes = ['topic-icon', className].filter(Boolean).join(' ');
 
-  // If no icon or invalid icon name, show colored dot fallback
+  // If no icon or invalid icon name, show accent-colored dot fallback
   if (!iconDef) {
     return (
       <span
@@ -28,7 +30,7 @@ export function TopicIcon({ icon, color, size = 'md', className = '' }: TopicIco
           width: pixelSize * 0.5,
           height: pixelSize * 0.5,
           borderRadius: '50%',
-          backgroundColor: color || '#6366f1',
+          backgroundColor: ACCENT_COLOR,
         }}
         role="img"
         aria-label="topic indicator"
@@ -42,7 +44,7 @@ export function TopicIcon({ icon, color, size = 'md', className = '' }: TopicIco
       width={pixelSize}
       height={pixelSize}
       viewBox={iconDef.viewBox}
-      fill={color || 'currentColor'}
+      fill={ACCENT_COLOR}
       role="img"
       aria-label="topic icon"
     >

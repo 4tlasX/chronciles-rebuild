@@ -1,3 +1,4 @@
+// Generic settings components (for key-value display)
 export { SettingKey, type SettingKeyProps } from './SettingKey';
 export { SettingValue, type SettingValueProps } from './SettingValue';
 export { SettingDate, type SettingDateProps } from './SettingDate';

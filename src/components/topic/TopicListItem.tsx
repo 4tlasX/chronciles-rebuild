@@ -29,7 +29,7 @@ export function TopicListItem({
       }}
     >
       <div className="topic-list-item-icon">
-        <TopicIcon icon={topic.icon} color={topic.color} size="md" />
+        <TopicIcon icon={topic.icon} size="md" />
       </div>
       <div className="topic-list-item-content">
         <span className="topic-list-item-name">{topic.name}</span>

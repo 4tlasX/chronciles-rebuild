@@ -1,8 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { upsertSetting, deleteSetting } from '@/lib/db';
-import { getServerSession } from '@/app/auth/actions';
+import { redirect } from 'next/navigation';
+import { upsertSetting, deleteSetting, createTaxonomy, getAllTaxonomies } from '@/lib/db';
+import { getServerSession, logoutAction } from '@/app/auth/actions';
+import { FeatureKey, FEATURES } from '@/lib/settings';
+
+// =============================================================================
+// Legacy generic setting actions
+// =============================================================================
 
 export async function upsertSettingAction(formData: FormData) {
   const session = await getServerSession();
@@ -48,4 +54,125 @@ export async function deleteSettingAction(formData: FormData) {
   await deleteSetting(session.schemaName, key);
   revalidatePath('/settings');
   return { success: true };
+}
+
+// =============================================================================
+// Typed settings actions
+// =============================================================================
+
+/**
+ * Update timezone setting
+ */
+export async function updateTimezoneAction(
+  timezone: string
+): Promise<{ error?: string }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  if (!timezone?.trim()) {
+    return { error: 'Timezone is required' };
+  }
+
+  try {
+    await upsertSetting(session.schemaName, 'timezone', timezone);
+    revalidatePath('/settings');
+    return {};
+  } catch (error) {
+    console.error('Failed to update timezone:', error);
+    return { error: 'Failed to update timezone' };
+  }
+}
+
+/**
+ * Update header color setting
+ */
+export async function updateHeaderColorAction(
+  color: string
+): Promise<{ error?: string }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  try {
+    await upsertSetting(session.schemaName, 'headerColor', color);
+    revalidatePath('/settings');
+    return {};
+  } catch (error) {
+    console.error('Failed to update header color:', error);
+    return { error: 'Failed to update header color' };
+  }
+}
+
+/**
+ * Update background image setting
+ */
+export async function updateBackgroundImageAction(
+  image: string
+): Promise<{ error?: string }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  try {
+    await upsertSetting(session.schemaName, 'backgroundImage', image);
+    revalidatePath('/settings');
+    return {};
+  } catch (error) {
+    console.error('Failed to update background image:', error);
+    return { error: 'Failed to update background image' };
+  }
+}
+
+/**
+ * Toggle a feature flag and create associated taxonomy if enabling
+ */
+export async function toggleFeatureAction(
+  feature: FeatureKey,
+  enabled: boolean
+): Promise<{ error?: string }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  const featureConfig = FEATURES.find((f) => f.key === feature);
+  if (!featureConfig) {
+    return { error: 'Invalid feature' };
+  }
+
+  try {
+    // If enabling, check if taxonomy exists and create if not
+    if (enabled) {
+      const taxonomies = await getAllTaxonomies(session.schemaName);
+      const exists = taxonomies.some(
+        (t) => t.name.toLowerCase() === featureConfig.taxonomyName.toLowerCase()
+      );
+
+      if (!exists) {
+        await createTaxonomy(session.schemaName, featureConfig.taxonomyName, {
+          icon: featureConfig.taxonomyIcon,
+        });
+      }
+    }
+
+    // Update the setting
+    await upsertSetting(session.schemaName, featureConfig.settingKey, enabled);
+    revalidatePath('/settings');
+    return {};
+  } catch (error) {
+    console.error(`Failed to toggle feature ${feature}:`, error);
+    return { error: `Failed to ${enabled ? 'enable' : 'disable'} ${featureConfig.name}` };
+  }
+}
+
+/**
+ * Sign out action
+ */
+export async function signOutAction(): Promise<void> {
+  await logoutAction();
+  redirect('/auth/login');
 }

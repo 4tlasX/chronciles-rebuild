@@ -1,34 +1,38 @@
 import { create } from 'zustand';
+import { AllSettings, DEFAULT_SETTINGS } from '@/lib/settings';
 
 export interface AuthData {
   userName: string;
   userEmail: string;
-  userSettings?: Record<string, unknown>;
+  userSettings?: Partial<AllSettings>;
 }
 
 interface AuthState {
   isAuthenticated: boolean;
   userName: string | null;
   userEmail: string | null;
-  userSettings: Record<string, unknown>;
+  userSettings: AllSettings;
 
   setAuth: (data: AuthData) => void;
   clearAuth: () => void;
-  updateSettings: (settings: Record<string, unknown>) => void;
+  /** Replace all settings */
+  setSettings: (settings: AllSettings) => void;
+  /** Partially update settings (merge with existing) */
+  updateSettings: (partial: Partial<AllSettings>) => void;
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
   isAuthenticated: false,
   userName: null,
   userEmail: null,
-  userSettings: {},
+  userSettings: { ...DEFAULT_SETTINGS },
 
   setAuth: (data: AuthData) => {
     set({
       isAuthenticated: true,
       userName: data.userName,
       userEmail: data.userEmail,
-      userSettings: data.userSettings || {},
+      userSettings: { ...DEFAULT_SETTINGS, ...data.userSettings },
     });
   },
 
@@ -37,11 +41,17 @@ export const useAuthStore = create<AuthState>()((set) => ({
       isAuthenticated: false,
       userName: null,
       userEmail: null,
-      userSettings: {},
+      userSettings: { ...DEFAULT_SETTINGS },
     });
   },
 
-  updateSettings: (settings: Record<string, unknown>) => {
+  setSettings: (settings: AllSettings) => {
     set({ userSettings: settings });
+  },
+
+  updateSettings: (partial: Partial<AllSettings>) => {
+    set((state) => ({
+      userSettings: { ...state.userSettings, ...partial },
+    }));
   },
 }));

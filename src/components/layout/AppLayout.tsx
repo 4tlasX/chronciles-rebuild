@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Sidebar } from './Sidebar';
 
 interface AppLayoutProps {
@@ -10,7 +11,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
       <div className="app-content">
         <header className="app-header">
-          <span className="app-logo">CHRONICLES</span>
+          <Link href="/posts" className="app-logo">CHRONICLES</Link>
         </header>
         <main className="app-main">
           {children}

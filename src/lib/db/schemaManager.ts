@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import crypto from 'crypto';
 import { seedDefaultTaxonomies } from '../taxonomies';
+import { seedDefaultSettings } from '../settings';
 
 // =============================================================================
 // Tenant Schema Manager
@@ -171,6 +172,9 @@ export async function registerTenant(
 
   // Seed default taxonomies (topics) for the new tenant
   await seedDefaultTaxonomies(schemaName);
+
+  // Seed default settings for the new tenant
+  await seedDefaultSettings(schemaName);
 
   return {
     account,

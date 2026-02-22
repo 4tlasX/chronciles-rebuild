@@ -1,6 +1,6 @@
 'use client';
 
-import { FormGroup, FormRow, TextInput, ColorInput, Button } from '@/components/form';
+import { FormGroup, FormRow, TextInput, Button } from '@/components/form';
 import type { Taxonomy } from '@/lib/db';
 
 export interface TopicFormProps {
@@ -22,7 +22,7 @@ export function TopicForm({
     <form action={onSubmit} className="topic-form">
       {topic && <input type="hidden" name="id" value={topic.id} />}
 
-      <FormRow>
+      <FormRow inline>
         <FormGroup label="Name" htmlFor="topic-name" required>
           <TextInput
             id="topic-name"
@@ -32,22 +32,12 @@ export function TopicForm({
             required
           />
         </FormGroup>
-      </FormRow>
-
-      <FormRow inline>
-        <FormGroup label="Icon (emoji)" htmlFor="topic-icon">
+        <FormGroup label="Icon" htmlFor="topic-icon">
           <TextInput
             id="topic-icon"
             name="icon"
-            placeholder="💻"
+            placeholder="book"
             defaultValue={topic?.icon ?? ''}
-          />
-        </FormGroup>
-        <FormGroup label="Color" htmlFor="topic-color">
-          <ColorInput
-            id="topic-color"
-            name="color"
-            defaultValue={topic?.color ?? '#3B82F6'}
           />
         </FormGroup>
       </FormRow>

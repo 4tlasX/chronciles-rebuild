@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { TopicIcon } from './TopicIcon';
+import { useFeatureFlags } from '@/lib/hooks';
+import { FEATURES } from '@/lib/settings';
 import type { Taxonomy } from '@/lib/db';
 
 export interface TaxonomySelectorProps {
@@ -9,6 +11,8 @@ export interface TaxonomySelectorProps {
   selectedId: number | null;
   onChange: (taxonomy: Taxonomy | null) => void;
   placeholder?: string;
+  /** If true, show all taxonomies regardless of feature flags */
+  showAllTaxonomies?: boolean;
 }
 
 export function TaxonomySelector({
@@ -16,16 +20,34 @@ export function TaxonomySelector({
   selectedId,
   onChange,
   placeholder = 'Select a topic...',
+  showAllTaxonomies = false,
 }: TaxonomySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { isEnabled } = useFeatureFlags();
+
+  // Get list of feature taxonomy names that are disabled
+  const disabledFeatureTaxonomies = useMemo(() => {
+    if (showAllTaxonomies) return [];
+    return FEATURES.filter((f) => !isEnabled(f.key)).map((f) =>
+      f.taxonomyName.toLowerCase()
+    );
+  }, [isEnabled, showAllTaxonomies]);
+
+  // Filter out disabled feature taxonomies
+  const availableTaxonomies = useMemo(() => {
+    if (showAllTaxonomies) return taxonomies;
+    return taxonomies.filter(
+      (t) => !disabledFeatureTaxonomies.includes(t.name.toLowerCase())
+    );
+  }, [taxonomies, disabledFeatureTaxonomies, showAllTaxonomies]);
 
   const selectedTaxonomy = taxonomies.find((t) => t.id === selectedId) || null;
 
   // Filter taxonomies by search query
-  const filteredTaxonomies = taxonomies.filter((t) =>
+  const filteredTaxonomies = availableTaxonomies.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -66,11 +88,7 @@ export function TaxonomySelector({
       >
         {selectedTaxonomy ? (
           <span className="taxonomy-selector-selected">
-            <TopicIcon
-              icon={selectedTaxonomy.icon}
-              color={selectedTaxonomy.color}
-              size="sm"
-            />
+            <TopicIcon icon={selectedTaxonomy.icon} size="sm" />
             <span className="taxonomy-selector-name">{selectedTaxonomy.name}</span>
           </span>
         ) : (
@@ -110,11 +128,7 @@ export function TaxonomySelector({
                 role="option"
                 aria-selected={selectedId === taxonomy.id}
               >
-                <TopicIcon
-                  icon={taxonomy.icon}
-                  color={taxonomy.color}
-                  size="sm"
-                />
+                <TopicIcon icon={taxonomy.icon} size="sm" />
                 <span className="taxonomy-selector-option-name">{taxonomy.name}</span>
               </button>
             ))}
