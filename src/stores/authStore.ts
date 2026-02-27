@@ -1,5 +1,5 @@
 import { create, StateCreator } from 'zustand';
-import { AllSettings, DEFAULT_SETTINGS } from '@/lib/settings';
+import { AllSettings, DEFAULT_SETTINGS, SettingKey } from '@/lib/settings';
 
 // Conditionally import zukeeper only in development browser environment
 const enableDevTools = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
@@ -22,6 +22,8 @@ interface AuthState {
   setSettings: (settings: AllSettings) => void;
   /** Partially update settings (merge with existing) */
   updateSettings: (partial: Partial<AllSettings>) => void;
+  /** Update a single setting without creating new userSettings object */
+  setSetting: <K extends SettingKey>(key: K, value: AllSettings[K]) => void;
 }
 
 const storeCreator: StateCreator<AuthState> = (set) => ({
@@ -55,6 +57,12 @@ const storeCreator: StateCreator<AuthState> = (set) => ({
   updateSettings: (partial: Partial<AllSettings>) => {
     set((state) => ({
       userSettings: { ...state.userSettings, ...partial },
+    }));
+  },
+
+  setSetting: (key, value) => {
+    set((state) => ({
+      userSettings: { ...state.userSettings, [key]: value },
     }));
   },
 });

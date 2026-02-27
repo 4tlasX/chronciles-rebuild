@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { FormGroup, FormRow, Textarea, Button, KeyValueList } from '@/components/form';
 import type { KeyValuePairData } from '@/components/form';
 import { TaxonomySelector } from '@/components/topic';
@@ -41,6 +41,7 @@ export interface PostFormProps {
   submitLabel?: string;
   isEditing?: boolean;
   enterToSubmit?: boolean;
+  escapeToSubmit?: boolean;
 }
 
 // Extract custom (non-specialized) metadata as key-value pairs
@@ -80,6 +81,7 @@ export function PostForm({
   onCancel,
   submitLabel = 'Save',
   enterToSubmit = false,
+  escapeToSubmit = false,
 }: PostFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   // Selected taxonomy state
@@ -150,6 +152,21 @@ export function PostForm({
       formRef.current.requestSubmit();
     }
   };
+
+  // Listen for Escape key at document level to save and close
+  useEffect(() => {
+    if (!escapeToSubmit) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && formRef.current) {
+        e.preventDefault();
+        formRef.current.requestSubmit();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [escapeToSubmit]);
 
   return (
     <form ref={formRef} action={handleSubmit} className="post-form">

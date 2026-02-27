@@ -42,6 +42,7 @@ export function PostEditForm({ post, taxonomies = [], initialTaxonomyId, inline 
         submitLabel="Save"
         isEditing
         enterToSubmit
+        escapeToSubmit
       />
     );
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition, useRef, useCallback } from 'react';
+import { useEffect, useState, useTransition, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardTitle } from '@/components/card';
 import { FormGroup, Select, Toggle, ColorGrid, ImageGrid, Button } from '@/components/form';
@@ -26,10 +26,35 @@ interface SettingsClientProps {
 
 export function SettingsClient({ initialSettings }: SettingsClientProps) {
   const setSettings = useAuthStore((state) => state.setSettings);
-  const updateSettings = useAuthStore((state) => state.updateSettings);
-  const userSettings = useAuthStore((state) => state.userSettings);
+  const setSetting = useAuthStore((state) => state.setSetting);
   const userName = useAuthStore((state) => state.userName);
   const userEmail = useAuthStore((state) => state.userEmail);
+
+  // Select individual settings to avoid re-renders when other settings change
+  const timezone = useAuthStore((state) => state.userSettings.timezone);
+  const foodEnabled = useAuthStore((state) => state.userSettings.foodEnabled);
+  const medicationEnabled = useAuthStore((state) => state.userSettings.medicationEnabled);
+  const goalsEnabled = useAuthStore((state) => state.userSettings.goalsEnabled);
+  const milestonesEnabled = useAuthStore((state) => state.userSettings.milestonesEnabled);
+  const exerciseEnabled = useAuthStore((state) => state.userSettings.exerciseEnabled);
+  const allergiesEnabled = useAuthStore((state) => state.userSettings.allergiesEnabled);
+
+  // Use local state for visual settings (CSS handles the actual display)
+  const [accentColor, setAccentColor] = useState(initialSettings.accentColor);
+  const [backgroundImage, setBackgroundImage] = useState(initialSettings.backgroundImage);
+
+  // Combine into object for easy access
+  const userSettings = {
+    timezone,
+    accentColor,
+    backgroundImage,
+    foodEnabled,
+    medicationEnabled,
+    goalsEnabled,
+    milestonesEnabled,
+    exerciseEnabled,
+    allergiesEnabled,
+  };
 
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -64,26 +89,27 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     const newTimezone = e.target.value;
     const prevTimezone = userSettings.timezone;
 
-    updateSettings({ timezone: newTimezone });
+    setSetting('timezone', newTimezone);
     setError(null);
 
     startTransition(async () => {
       const result = await updateTimezoneAction(newTimezone);
       if (result.error) {
-        updateSettings({ timezone: prevTimezone });
+        setSetting('timezone', prevTimezone);
         setError(result.error);
       }
     });
   };
 
   const handleAccentColorChange = (color: string) => {
-    // Update UI immediately (optimistic)
-    updateSettings({ accentColor: color });
-    setError(null);
+    // Update CSS variables immediately
     document.documentElement.style.setProperty('--accent-color', color);
     document.documentElement.style.setProperty('--accent-color-hover', adjustBrightness(color, 20));
 
-    // Store the pending value
+    // Update local state for grid selection
+    setAccentColor(color);
+
+    // Store the pending value for debounced save
     pendingAccentColorRef.current = color;
 
     // Clear any existing timeout
@@ -92,15 +118,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     }
 
     // Debounce server action - wait 500ms before saving
-    accentColorTimeoutRef.current = setTimeout(() => {
+    accentColorTimeoutRef.current = setTimeout(async () => {
       const colorToSave = pendingAccentColorRef.current;
       if (colorToSave) {
-        startTransition(async () => {
-          const result = await updateAccentColorAction(colorToSave);
-          if (result.error) {
-            setError(result.error);
-          }
-        });
+        await updateAccentColorAction(colorToSave);
       }
     }, 500);
   };
@@ -116,16 +137,17 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   }
 
   const handleBackgroundChange = (image: string) => {
-    // Update UI immediately (optimistic)
-    updateSettings({ backgroundImage: image });
-    setError(null);
+    // Update CSS variable immediately
     if (image) {
       document.documentElement.style.setProperty('--background-image', `url(${image})`);
     } else {
       document.documentElement.style.setProperty('--background-image', 'none');
     }
 
-    // Store the pending value
+    // Update local state for grid selection
+    setBackgroundImage(image);
+
+    // Store the pending value for debounced save
     pendingBackgroundImageRef.current = image;
 
     // Clear any existing timeout
@@ -134,15 +156,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     }
 
     // Debounce server action - wait 500ms before saving
-    backgroundImageTimeoutRef.current = setTimeout(() => {
+    backgroundImageTimeoutRef.current = setTimeout(async () => {
       const imageToSave = pendingBackgroundImageRef.current;
       if (imageToSave !== null) {
-        startTransition(async () => {
-          const result = await updateBackgroundImageAction(imageToSave);
-          if (result.error) {
-            setError(result.error);
-          }
-        });
+        await updateBackgroundImageAction(imageToSave);
       }
     }, 500);
   };
@@ -154,13 +171,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     const settingKey = featureConfig.settingKey;
     const prevValue = userSettings[settingKey];
 
-    updateSettings({ [settingKey]: enabled });
+    setSetting(settingKey, enabled);
     setError(null);
 
     startTransition(async () => {
       const result = await toggleFeatureAction(feature, enabled);
       if (result.error) {
-        updateSettings({ [settingKey]: prevValue });
+        setSetting(settingKey, prevValue);
         setError(result.error);
       }
     });
