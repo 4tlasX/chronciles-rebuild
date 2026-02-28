@@ -41,8 +41,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
   allergiesEnabled: false,
   // User preferences
   timezone: 'UTC',
-  accentColor: '#80deea', // Material Design Cyan 200
-  backgroundImage: '',
+  accentColor: '#80cbc4', // Material Design Teal 200 (blue-green)
+  backgroundImage: '/backgrounds/austin-distel-vC_Q127x8Kg-unsplash.jpg', // Plants
 };
 
 // =============================================================================

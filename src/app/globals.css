@@ -4,11 +4,11 @@
 
 :root {
   /* Theme colors (can be overridden by user settings) */
-  --accent-color: #80deea;
-  --accent-color-hover: #90eefa;
+  --accent-color: #80cbc4;
+  --accent-color-hover: #90dbd4;
 
-  /* Background image (empty by default) */
-  --background-image: none;
+  /* Background image (Plants by default) */
+  --background-image: url('/backgrounds/austin-distel-vC_Q127x8Kg-unsplash.jpg');
 }
 
 /* =============================================================================
