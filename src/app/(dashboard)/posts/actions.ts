@@ -1,8 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createPost, updatePost, deletePost } from '@/lib/db';
+import { createPost, updatePost, deletePost, getAllPosts } from '@/lib/db';
 import { getServerSession } from '@/app/auth/actions';
+import type { Post } from '@/lib/db';
 
 export async function createPostAction(formData: FormData) {
   const session = await getServerSession();
@@ -44,9 +45,9 @@ export async function createPostAction(formData: FormData) {
     }
   }
 
-  await createPost(session.schemaName, content, metadata);
+  const post = await createPost(session.schemaName, content, metadata);
   revalidatePath('/');
-  return { success: true };
+  return { success: true, post };
 }
 
 export async function updatePostAction(formData: FormData) {
@@ -99,9 +100,9 @@ export async function updatePostAction(formData: FormData) {
   // Always update metadata (even if empty, to clear previous taxonomy)
   updates.metadata = metadata;
 
-  await updatePost(session.schemaName, id, updates);
+  const post = await updatePost(session.schemaName, id, updates);
   revalidatePath('/');
-  return { success: true };
+  return { success: true, post };
 }
 
 export async function deletePostAction(formData: FormData) {
@@ -119,4 +120,17 @@ export async function deletePostAction(formData: FormData) {
   await deletePost(session.schemaName, id);
   revalidatePath('/');
   return { success: true };
+}
+
+export async function loadMorePostsAction(
+  offset: number,
+  limit: number = 50
+): Promise<{ posts: Post[]; hasMore: boolean; error?: string }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { posts: [], hasMore: false, error: 'Not authenticated' };
+  }
+
+  const posts = await getAllPosts(session.schemaName, { limit, offset });
+  return { posts, hasMore: posts.length === limit };
 }

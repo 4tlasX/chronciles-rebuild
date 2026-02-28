@@ -23,7 +23,7 @@ export async function createTopicAction(formData: FormData) {
     color: color || undefined,
   });
 
-  revalidatePath('/topics');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -55,7 +55,7 @@ export async function updateTopicAction(formData: FormData) {
   }
 
   await updateTaxonomy(session.schemaName, id, updates);
-  revalidatePath('/topics');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -72,6 +72,6 @@ export async function deleteTopicAction(formData: FormData) {
   }
 
   await deleteTaxonomy(session.schemaName, id);
-  revalidatePath('/topics');
+  revalidatePath('/');
   return { success: true };
 }

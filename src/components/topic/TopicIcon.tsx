@@ -12,8 +12,8 @@ const sizeMap = {
   lg: 24,
 };
 
-// Use CSS variable for accent color (defined in :root in globals.css)
-const ACCENT_COLOR = 'var(--accent-color)';
+// Topic icon color
+const ICON_COLOR = '#b0bec5';
 
 export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps) {
   const iconDef = icon ? getIconDefinition(icon) : null;
@@ -30,7 +30,7 @@ export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps)
           width: pixelSize * 0.5,
           height: pixelSize * 0.5,
           borderRadius: '50%',
-          backgroundColor: ACCENT_COLOR,
+          backgroundColor: ICON_COLOR,
         }}
         role="img"
         aria-label="topic indicator"
@@ -44,7 +44,7 @@ export function TopicIcon({ icon, size = 'md', className = '' }: TopicIconProps)
       width={pixelSize}
       height={pixelSize}
       viewBox={iconDef.viewBox}
-      fill={ACCENT_COLOR}
+      fill={ICON_COLOR}
       role="img"
       aria-label="topic icon"
     >

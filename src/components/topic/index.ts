@@ -6,3 +6,5 @@ export { TopicForm, type TopicFormProps } from './TopicForm';
 export { TopicTag, type TopicTagProps } from './TopicTag';
 export { TaxonomySelector, type TaxonomySelectorProps } from './TaxonomySelector';
 export { TopicListItem } from './TopicListItem';
+export { TopicSidebar } from './TopicSidebar';
+export { TopicSidebarForm } from './TopicSidebarForm';

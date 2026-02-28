@@ -1,6 +1,6 @@
 'use client';
 
-import { FormGroup, FormRow, Select, TextInput, TimeInput, Checkbox, Textarea, Button } from '@/components/form';
+import { FormGroup, FormRow, Select, TextInput, TimeInput, Checkbox, Textarea } from '@/components/form';
 import type { MedicationMetadata } from '@/lib/taxonomies';
 
 export interface MedicationFieldsProps {
@@ -66,20 +66,19 @@ export function MedicationFields({ values, onChange }: MedicationFieldsProps) {
                   onChange={(e) => handleTimeChange(index, e.target.value)}
                 />
                 {values.scheduleTimes.length > 1 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
+                    className="metadata-field-btn metadata-field-btn-remove"
                     onClick={() => handleRemoveTime(index)}
                   >
-                    Remove
-                  </Button>
+                    − Remove
+                  </button>
                 )}
               </div>
             ))}
-            <Button type="button" variant="secondary" size="sm" onClick={handleAddTime}>
-              Add Time
-            </Button>
+            <button type="button" className="metadata-field-btn metadata-field-btn-add" onClick={handleAddTime}>
+              + Add Time
+            </button>
           </div>
         </FormGroup>
       </FormRow>

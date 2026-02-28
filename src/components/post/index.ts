@@ -5,3 +5,4 @@ export { PostCard, type PostCardProps } from './PostCard';
 export { PostForm, type PostFormProps } from './PostForm';
 export { PostListItem } from './PostListItem';
 export { PostView } from './PostView';
+export { EditablePostCard } from './EditablePostCard';

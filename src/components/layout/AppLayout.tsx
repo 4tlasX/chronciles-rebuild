@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Sidebar } from './Sidebar';
+import { Header } from './Header';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,9 +10,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="app-layout">
       <Sidebar />
       <div className="app-content">
-        <header className="app-header">
-          <Link href="/posts" className="app-logo">CHRONICLES</Link>
-        </header>
+        <Header />
         <main className="app-main">
           {children}
         </main>

@@ -10,7 +10,6 @@ interface PostViewProps {
 }
 
 export function PostView({ post, taxonomy }: PostViewProps) {
-  const title = getPostTitle(post);
   const date = formatDate(post.createdAt);
   const time = formatTime(post.createdAt);
   const metadata = post.metadata || {};
@@ -21,15 +20,19 @@ export function PostView({ post, taxonomy }: PostViewProps) {
     ([key]) => !key.startsWith('_') && !isSpecializedField(key, taxonomy?.name)
   );
 
+  const shortDate = formatShortDate(post.createdAt);
+
   return (
     <article className="post-view">
       <header className="post-view-header">
-        {taxonomy && (
-          <div className="post-view-topic">
-            <TopicTag name={taxonomy.name} icon={taxonomy.icon} />
-          </div>
-        )}
-        <h1 className="post-view-title">{title}</h1>
+        <div className="post-view-header-row">
+          <span className="post-view-date-short">{shortDate}</span>
+          {taxonomy && (
+            <div className="post-view-topic">
+              <TopicTag name={taxonomy.name} icon={taxonomy.icon} />
+            </div>
+          )}
+        </div>
         <div className="post-view-meta">
           <span className="post-view-date">{date}</span>
           <span className="post-view-time">{time}</span>
@@ -200,14 +203,6 @@ function formatMetadataValue(value: unknown): string {
   return String(value);
 }
 
-function getPostTitle(post: Post): string {
-  if (post.metadata && typeof post.metadata === 'object' && 'title' in post.metadata) {
-    return String(post.metadata.title);
-  }
-  const firstLine = post.content.split('\n')[0].trim();
-  return firstLine || 'Untitled';
-}
-
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -215,6 +210,11 @@ function formatDate(date: Date): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function formatShortDate(date: Date): string {
+  const d = new Date(date);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function formatTime(date: Date): string {

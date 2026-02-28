@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAllPosts, getAllTaxonomies } from '@/lib/db';
 import { getServerSession } from '@/app/auth/actions';
-import { PostsPanel } from './PostsPanel';
+import { PostCardFeed } from './PostCardFeed';
 
 export default async function HomePage() {
   const session = await getServerSession();
@@ -11,9 +11,15 @@ export default async function HomePage() {
   }
 
   const [posts, taxonomies] = await Promise.all([
-    getAllPosts(session.schemaName),
+    getAllPosts(session.schemaName, { limit: 50, offset: 0 }),
     getAllTaxonomies(session.schemaName),
   ]);
 
-  return <PostsPanel posts={posts} taxonomies={taxonomies} />;
+  return (
+    <PostCardFeed
+      initialPosts={posts}
+      taxonomies={taxonomies}
+      hasMore={posts.length === 50}
+    />
+  );
 }

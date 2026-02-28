@@ -17,8 +17,8 @@ export function TopicTag({ topic, name, icon, className = '' }: TopicTagProps) {
 
   return (
     <span className={classes}>
-      <TopicIcon icon={displayIcon} size="sm" />
       {displayName}
+      <TopicIcon icon={displayIcon} size="sm" />
     </span>
   );
 }
