@@ -42,7 +42,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   // User preferences
   timezone: 'UTC',
   accentColor: '#80cbc4', // Material Design Teal 200 (blue-green)
-  backgroundImage: '/backgrounds/austin-distel-vC_Q127x8Kg-unsplash.jpg', // Plants
+  backgroundImage: '/backgrounds/adam-kool-ndN00KmbJ1c-unsplash.jpg', // Waterfall
 };
 
 // =============================================================================
@@ -155,7 +155,6 @@ export interface BackgroundOption {
 export const BACKGROUND_IMAGES: BackgroundOption[] = [
   { value: '', label: 'None', artist: null, artistUrl: null },
   { value: '/backgrounds/adam-kool-ndN00KmbJ1c-unsplash.jpg', label: 'Waterfall', artist: 'Adam Kool', artistUrl: 'https://unsplash.com/@adamkool' },
-  { value: '/backgrounds/austin-distel-vC_Q127x8Kg-unsplash.jpg', label: 'Plants', artist: 'Austin Distel', artistUrl: 'https://unsplash.com/@austindistel' },
   { value: '/backgrounds/clem-onojeghuo-zlABb6Gke24-unsplash.jpg', label: 'Abstract', artist: 'Clem Onojeghuo', artistUrl: 'https://unsplash.com/@clemono' },
   { value: '/backgrounds/daniel-olah-6KQETG8J-zI-unsplash.jpg', label: 'Ocean', artist: 'Daniel Olah', artistUrl: 'https://unsplash.com/@danesduet' },
   { value: '/backgrounds/daniela-cuevas-t7YycgAoVSw-unsplash.jpg', label: 'Desert', artist: 'Daniela Cuevas', artistUrl: 'https://unsplash.com/@danielacuevas' },

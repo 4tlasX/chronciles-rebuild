@@ -6,9 +6,12 @@ import { FormPanel } from '@/components/layout';
 import { FormGroup, FormRow, EmailInput, PasswordInput, Button } from '@/components/form';
 import { useAuthStore } from '@/stores';
 import { loginUserAction } from '@/app/auth/actions';
+import { encryptionService } from '@/lib/crypto';
+import { useEncryption } from '@/components/encryption';
 
 export function LoginForm() {
   const router = useRouter();
+  const { setMasterKey } = useEncryption();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,6 +35,27 @@ export function LoginForm() {
     }
 
     if (result.success && result.data) {
+      // If encryption is enabled, unlock with the password
+      if (result.encryption?.encryptionEnabled &&
+          result.encryption.kekSalt &&
+          result.encryption.encryptedMasterKey &&
+          result.encryption.kekWrapIv) {
+        try {
+          const masterKey = await encryptionService.unwrapMasterKey(
+            password,
+            result.encryption.kekSalt,
+            result.encryption.encryptedMasterKey,
+            result.encryption.kekWrapIv,
+            result.encryption.kekIterations || 600000
+          );
+          setMasterKey(masterKey);
+        } catch (err) {
+          setError('Failed to unlock encryption. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       useAuthStore.getState().setAuth({
         userName: result.data.userName,
         userEmail: result.data.userEmail,

@@ -37,14 +37,11 @@ describe('EditablePostCard', () => {
       expect(screen.getByText('Test post content')).toBeInTheDocument();
     });
 
-    it('renders post date', () => {
+    it('renders post date in calendar style', () => {
       render(<EditablePostCard {...defaultProps} />);
-      expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
-    });
-
-    it('renders short date', () => {
-      render(<EditablePostCard {...defaultProps} />);
-      expect(screen.getByText('3/15')).toBeInTheDocument();
+      // Calendar style shows month abbreviation and day number separately
+      expect(screen.getByText('Mar')).toBeInTheDocument();
+      expect(screen.getByText('15')).toBeInTheDocument();
     });
 
     it('renders topic placeholder when no taxonomy', () => {
@@ -63,16 +60,10 @@ describe('EditablePostCard', () => {
       expect(defaultProps.onStartEdit).toHaveBeenCalled();
     });
 
-    it('calls onDelete when X button is clicked while not editing', () => {
+    it('does not show delete button when not editing', () => {
       render(<EditablePostCard {...defaultProps} />);
-      fireEvent.click(screen.getByLabelText('Delete post'));
-      expect(defaultProps.onDelete).toHaveBeenCalledWith(1);
-    });
-
-    it('does not call onStartEdit when X button is clicked', () => {
-      render(<EditablePostCard {...defaultProps} />);
-      fireEvent.click(screen.getByLabelText('Delete post'));
-      expect(defaultProps.onStartEdit).not.toHaveBeenCalled();
+      // In the current design, delete is only available in edit mode
+      expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     });
   });
 
@@ -279,11 +270,6 @@ describe('EditablePostCard', () => {
   });
 
   describe('Accessibility', () => {
-    it('has correct aria-label for delete button when not editing', () => {
-      render(<EditablePostCard {...defaultProps} />);
-      expect(screen.getByLabelText('Delete post')).toBeInTheDocument();
-    });
-
     it('has correct aria-label for cancel button when editing', () => {
       render(<EditablePostCard {...defaultProps} isEditing={true} />);
       expect(screen.getByLabelText('Cancel')).toBeInTheDocument();

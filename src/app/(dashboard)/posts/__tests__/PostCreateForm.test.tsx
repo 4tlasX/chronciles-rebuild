@@ -7,6 +7,14 @@ vi.mock('../actions', () => ({
   createPostAction: vi.fn(),
 }));
 
+// Mock the encryption hook
+vi.mock('@/components/encryption', () => ({
+  useEncryption: () => ({
+    isUnlocked: false,
+    encryptPost: vi.fn(),
+  }),
+}));
+
 describe('PostCreateForm', () => {
   it('renders form panel with title', () => {
     render(<PostCreateForm />);

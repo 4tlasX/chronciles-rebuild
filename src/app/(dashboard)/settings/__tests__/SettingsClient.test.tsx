@@ -115,7 +115,7 @@ describe('SettingsClient', () => {
       });
     });
 
-    it('updates the Zustand store when accent color is changed', async () => {
+    it('persists accent color via server action after debounce', async () => {
       render(<SettingsClient initialSettings={initialSettings} />);
 
       // Wait for settings to initialize
@@ -129,11 +129,10 @@ describe('SettingsClient', () => {
       const amberButton = accentGrid?.querySelector('[title="Amber"]') as HTMLElement;
       fireEvent.click(amberButton);
 
-      // Verify store was updated (immediate, before debounce)
+      // Verify server action is called after debounce (500ms)
       await waitFor(() => {
-        const state = useAuthStore.getState();
-        expect(state.userSettings.accentColor).toBe('#ffe082');
-      });
+        expect(updateAccentColorAction).toHaveBeenCalledWith('#ffe082');
+      }, { timeout: 1000 });
     });
 
     it('updates selection visual after clicking new color', async () => {

@@ -2,6 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LoginForm } from '../LoginForm';
 
+// Mock encryption service
+vi.mock('@/lib/crypto', () => ({
+  encryptionService: {
+    unwrapMasterKey: vi.fn().mockResolvedValue({} as CryptoKey),
+  },
+}));
+
+// Mock encryption provider
+vi.mock('@/components/encryption', () => ({
+  useEncryption: () => ({
+    setMasterKey: vi.fn(),
+  }),
+}));
+
 // Mock next/navigation
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({

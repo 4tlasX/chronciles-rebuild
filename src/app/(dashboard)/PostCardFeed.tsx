@@ -1,18 +1,51 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { Post, Taxonomy } from '@/lib/db';
+import type { Taxonomy, SerializedPostWithEncryption, DisplayPost } from '@/lib/db';
 import { EditablePostCard } from '@/components/post';
 import { TopicSidebar } from '@/components/topic';
 import { SearchSidebar } from '@/components/search';
 import { loadMorePostsAction, createPostAction, updatePostAction, deletePostAction } from './posts/actions';
 import { createTopicAction, updateTopicAction, deleteTopicAction } from './topics/actions';
 import { useUIStore } from '@/stores';
+import { useEncryption, UnlockDialog } from '@/components/encryption';
+import type { EncryptedPost, DecryptedPost } from '@/lib/crypto';
 
 interface PostCardFeedProps {
-  initialPosts: Post[];
+  initialPosts: SerializedPostWithEncryption[];
   taxonomies: Taxonomy[];
   hasMore: boolean;
+}
+
+// Helper to convert server posts to EncryptedPost format for decryption
+function toEncryptedPost(post: SerializedPostWithEncryption): EncryptedPost {
+  return {
+    id: post.id,
+    content: post.content ?? undefined,
+    metadata: post.metadata ?? undefined,
+    contentEncrypted: post.contentEncrypted,
+    contentIv: post.contentIv,
+    metadataEncrypted: post.metadataEncrypted,
+    metadataIv: post.metadataIv,
+    isEncrypted: post.isEncrypted,
+    createdAt: post.createdAt,
+    updatedAt: post.createdAt, // Use createdAt as fallback
+  };
+}
+
+// Helper to convert DecryptedPost back to SerializedPostWithEncryption format
+function toSerializedPost(decrypted: DecryptedPost): SerializedPostWithEncryption {
+  return {
+    id: decrypted.id,
+    content: decrypted.content,
+    metadata: decrypted.metadata,
+    contentEncrypted: null,
+    contentIv: null,
+    metadataEncrypted: null,
+    metadataIv: null,
+    isEncrypted: false, // After decryption, treat as unencrypted for display
+    createdAt: decrypted.createdAt,
+  };
 }
 
 export function PostCardFeed({
@@ -20,12 +53,44 @@ export function PostCardFeed({
   taxonomies: initialTaxonomies,
   hasMore: initialHasMore,
 }: PostCardFeedProps) {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const { isUnlocked, encryptionEnabled, decryptPosts, encryptPost } = useEncryption();
+
+  const [posts, setPosts] = useState<SerializedPostWithEncryption[]>(initialPosts);
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>(initialTaxonomies);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+
+  // Check if we need to show unlock dialog (encrypted posts exist but not unlocked)
+  const hasEncryptedPosts = useMemo(() => {
+    return initialPosts.some((post) => post.isEncrypted);
+  }, [initialPosts]);
+
+  // Decrypt posts when unlocked
+  useEffect(() => {
+    if (isUnlocked && hasEncryptedPosts && !isDecrypting) {
+      setIsDecrypting(true);
+      const encryptedPosts = initialPosts.map(toEncryptedPost);
+      decryptPosts(encryptedPosts)
+        .then((decrypted) => {
+          setPosts(decrypted.map(toSerializedPost));
+          setIsDecrypting(false);
+        })
+        .catch(() => {
+          setIsDecrypting(false);
+        });
+    }
+  }, [isUnlocked, hasEncryptedPosts, initialPosts, decryptPosts, isDecrypting]);
+
+  // Show unlock dialog if needed
+  useEffect(() => {
+    if (encryptionEnabled && hasEncryptedPosts && !isUnlocked) {
+      setShowUnlockDialog(true);
+    }
+  }, [encryptionEnabled, hasEncryptedPosts, isUnlocked]);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const lastTriggerRef = useRef(0);
@@ -54,7 +119,7 @@ export function PostCardFeed({
 
   // Taxonomy lookup helper
   const getTaxonomyForPost = useCallback(
-    (post: Post): Taxonomy | null => {
+    (post: DisplayPost): Taxonomy | null => {
       const taxonomyId = post.metadata?._taxonomyId as number | undefined;
       if (!taxonomyId) return null;
       return taxonomies.find((t) => t.id === taxonomyId) || null;
@@ -160,11 +225,82 @@ export function PostCardFeed({
     setEditingPostId(null);
   };
 
-  // Handle new post save
+  // Handle new post save (with encryption if unlocked)
   const handleCreateSave = async (formData: FormData) => {
-    const result = await createPostAction(formData);
+    let finalFormData = formData;
+
+    // If encryption is unlocked, encrypt the content before sending
+    if (isUnlocked) {
+      const content = formData.get('content') as string;
+      const metadataStr = formData.get('metadata') as string;
+      const taxonomyId = formData.get('taxonomyId') as string;
+      const specializedMetadataStr = formData.get('specializedMetadata') as string;
+
+      // Build metadata object
+      let metadata: Record<string, unknown> = {};
+      if (metadataStr?.trim()) {
+        try {
+          metadata = JSON.parse(metadataStr);
+        } catch {
+          // Invalid JSON
+        }
+      }
+      if (taxonomyId) {
+        metadata._taxonomyId = parseInt(taxonomyId, 10);
+      }
+      if (specializedMetadataStr?.trim()) {
+        try {
+          const specializedMetadata = JSON.parse(specializedMetadataStr);
+          metadata = { ...metadata, ...specializedMetadata };
+        } catch {
+          // Invalid JSON
+        }
+      }
+
+      // Encrypt content and metadata
+      const encrypted = await encryptPost(content, metadata);
+
+      // Create new FormData with encrypted payload
+      finalFormData = new FormData();
+      finalFormData.set('isEncrypted', 'true');
+      finalFormData.set('encryptedPayload', JSON.stringify(encrypted));
+    }
+
+    const result = await createPostAction(finalFormData);
     if (result.success && result.post) {
-      setPosts((prev) => [result.post!, ...prev]);
+      // Parse metadata for display
+      const metadataStr = formData.get('metadata') as string;
+      const taxonomyId = formData.get('taxonomyId') as string;
+      const specializedMetadataStr = formData.get('specializedMetadata') as string;
+
+      let metadata: Record<string, unknown> = {};
+      if (metadataStr?.trim()) {
+        try { metadata = JSON.parse(metadataStr); } catch {}
+      }
+      if (taxonomyId) {
+        metadata._taxonomyId = parseInt(taxonomyId, 10);
+      }
+      if (specializedMetadataStr?.trim()) {
+        try {
+          const specializedMetadata = JSON.parse(specializedMetadataStr);
+          metadata = { ...metadata, ...specializedMetadata };
+        } catch {}
+      }
+
+      // Convert to serialized format for display
+      const newPost: SerializedPostWithEncryption = {
+        id: result.post.id,
+        content: formData.get('content') as string, // Use original content for display
+        metadata,
+        contentEncrypted: null,
+        contentIv: null,
+        metadataEncrypted: null,
+        metadataIv: null,
+        isEncrypted: false, // After display, treat as plaintext
+        createdAt: result.post.createdAt,
+      };
+
+      setPosts((prev) => [newPost, ...prev]);
     }
     setIsCreating(false);
   };
@@ -230,8 +366,18 @@ export function PostCardFeed({
     ? taxonomies.find((t) => t.id === selectedTopicId)
     : null;
 
+  const handleUnlockSuccess = () => {
+    setShowUnlockDialog(false);
+  };
+
   return (
     <div className={`post-card-feed-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      {/* Unlock Dialog for encrypted posts */}
+      <UnlockDialog
+        isOpen={showUnlockDialog}
+        onSuccess={handleUnlockSuccess}
+      />
+
       <TopicSidebar
         taxonomies={taxonomies}
         postCounts={postCounts}

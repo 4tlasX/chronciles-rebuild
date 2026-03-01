@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/components/auth'
+import { EncryptionProviderWrapper } from '@/components/encryption'
 import './globals.css'
 
 const montserrat = Montserrat({
@@ -22,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={montserrat.variable}>
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <EncryptionProviderWrapper>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </EncryptionProviderWrapper>
       </body>
     </html>
   )

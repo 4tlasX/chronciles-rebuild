@@ -93,7 +93,10 @@ describe('PostForm', () => {
         initialTaxonomyId={1}
       />
     );
-    expect(screen.getByText('Task Settings')).toBeInTheDocument();
+    // TaskFields shows Status label with checkboxes
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByLabelText('Completed')).toBeInTheDocument();
+    expect(screen.getByLabelText('In Progress')).toBeInTheDocument();
   });
 
   it('does not show specialized fields for taxonomy without them', () => {

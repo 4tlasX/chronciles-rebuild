@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { upsertSetting, deleteSetting, createTaxonomy, getAllTaxonomies } from '@/lib/db';
 import { getServerSession, logoutAction } from '@/app/auth/actions';
 import { FeatureKey, FEATURES } from '@/lib/settings';
+import { seedDefaultTaxonomies } from '@/lib/taxonomies';
 
 // =============================================================================
 // Legacy generic setting actions
@@ -166,6 +167,37 @@ export async function toggleFeatureAction(
   } catch (error) {
     console.error(`Failed to toggle feature ${feature}:`, error);
     return { error: `Failed to ${enabled ? 'enable' : 'disable'} ${featureConfig.name}` };
+  }
+}
+
+/**
+ * Seed default topics (taxonomies) for the user
+ */
+export async function seedDefaultTopicsAction(): Promise<{ error?: string; count?: number }> {
+  const session = await getServerSession();
+  if (!session) {
+    return { error: 'Not authenticated' };
+  }
+
+  try {
+    // Get existing taxonomies to count how many we have before
+    const existingBefore = await getAllTaxonomies(session.schemaName);
+    const countBefore = existingBefore.length;
+
+    // Seed default taxonomies (uses ON CONFLICT DO NOTHING)
+    await seedDefaultTaxonomies(session.schemaName);
+
+    // Get count after to see how many were added
+    const existingAfter = await getAllTaxonomies(session.schemaName);
+    const countAfter = existingAfter.length;
+    const added = countAfter - countBefore;
+
+    revalidatePath('/');
+    revalidatePath('/settings');
+    return { count: added };
+  } catch (error) {
+    console.error('Failed to seed default topics:', error);
+    return { error: 'Failed to seed default topics' };
   }
 }
 

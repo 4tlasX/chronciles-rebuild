@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { Post, Taxonomy } from '@/lib/db';
+import type { DisplayPost, Taxonomy } from '@/lib/db';
 import { TopicIcon } from '@/components/topic';
 import { Textarea, Button } from '@/components/form';
 import { hasSpecializedFields, getDefaultMetadata } from '@/lib/taxonomies';
@@ -30,7 +30,7 @@ import type {
 } from '@/lib/taxonomies';
 
 interface EditablePostCardProps {
-  post: Post;
+  post: DisplayPost;
   taxonomy?: Taxonomy | null;
   taxonomies: Taxonomy[];
   isEditing: boolean;
@@ -262,7 +262,7 @@ export function EditablePostCard({
 
           <Textarea
             name="content"
-            defaultValue={post.content}
+            defaultValue={post.content ?? ''}
             placeholder="Write your post..."
             required
             className="post-view-edit-textarea"

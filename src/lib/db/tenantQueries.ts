@@ -30,6 +30,40 @@ export interface Post {
   createdAt: Date;
 }
 
+// Post with encrypted fields (from database)
+export interface PostWithEncryption {
+  id: number;
+  content: string | null;
+  metadata: Record<string, unknown> | null;
+  contentEncrypted: Buffer | null;
+  contentIv: Buffer | null;
+  metadataEncrypted: Buffer | null;
+  metadataIv: Buffer | null;
+  isEncrypted: boolean;
+  createdAt: Date;
+}
+
+// Serialized version for client components (Buffer -> base64 string)
+export interface SerializedPostWithEncryption {
+  id: number;
+  content: string | null;
+  metadata: Record<string, unknown> | null;
+  contentEncrypted: string | null;
+  contentIv: string | null;
+  metadataEncrypted: string | null;
+  metadataIv: string | null;
+  isEncrypted: boolean;
+  createdAt: Date;
+}
+
+// Display-ready post type for components (works with both Post and SerializedPostWithEncryption)
+export interface DisplayPost {
+  id: number;
+  content: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date;
+}
+
 export interface PostWithTaxonomies extends Post {
   taxonomies: Taxonomy[];
 }
@@ -191,11 +225,39 @@ export async function createPost(
 ): Promise<Post> {
   const schema = escapeSchema(schemaName);
   const result = await prisma.$queryRawUnsafe<Post[]>(
-    `INSERT INTO ${schema}.posts (content, metadata)
-     VALUES ($1, $2::jsonb)
+    `INSERT INTO ${schema}.posts (content, metadata, is_encrypted)
+     VALUES ($1, $2::jsonb, FALSE)
      RETURNING id, content, metadata, created_at as "createdAt"`,
     content,
     JSON.stringify(metadata)
+  );
+  return result[0];
+}
+
+/**
+ * Create an encrypted post
+ * Content and metadata are stored as encrypted BYTEA
+ */
+export interface EncryptedPostInput {
+  contentEncrypted: Buffer;
+  contentIv: Buffer;
+  metadataEncrypted: Buffer;
+  metadataIv: Buffer;
+}
+
+export async function createEncryptedPost(
+  schemaName: string,
+  encryptedData: EncryptedPostInput
+): Promise<PostWithEncryption> {
+  const schema = escapeSchema(schemaName);
+  const result = await prisma.$queryRawUnsafe<PostWithEncryption[]>(
+    `INSERT INTO ${schema}.posts (content_encrypted, content_iv, metadata_encrypted, metadata_iv, is_encrypted)
+     VALUES ($1, $2, $3, $4, TRUE)
+     RETURNING id, content, metadata, content_encrypted as "contentEncrypted", content_iv as "contentIv", metadata_encrypted as "metadataEncrypted", metadata_iv as "metadataIv", is_encrypted as "isEncrypted", created_at as "createdAt"`,
+    encryptedData.contentEncrypted,
+    encryptedData.contentIv,
+    encryptedData.metadataEncrypted,
+    encryptedData.metadataIv
   );
   return result[0];
 }
@@ -222,6 +284,31 @@ export async function getAllPosts(
 
   return prisma.$queryRawUnsafe<Post[]>(
     `SELECT id, content, metadata, created_at as "createdAt"
+     FROM ${schema}.posts
+     ORDER BY created_at DESC
+     LIMIT $1 OFFSET $2`,
+    limit,
+    offset
+  );
+}
+
+/**
+ * Get all posts including encrypted fields
+ * Returns both plaintext and encrypted posts
+ */
+export async function getAllPostsWithEncryption(
+  schemaName: string,
+  options?: { limit?: number; offset?: number }
+): Promise<PostWithEncryption[]> {
+  const schema = escapeSchema(schemaName);
+  const limit = options?.limit || 50;
+  const offset = options?.offset || 0;
+
+  return prisma.$queryRawUnsafe<PostWithEncryption[]>(
+    `SELECT id, content, metadata,
+            content_encrypted as "contentEncrypted", content_iv as "contentIv",
+            metadata_encrypted as "metadataEncrypted", metadata_iv as "metadataIv",
+            is_encrypted as "isEncrypted", created_at as "createdAt"
      FROM ${schema}.posts
      ORDER BY created_at DESC
      LIMIT $1 OFFSET $2`,

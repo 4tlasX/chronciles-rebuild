@@ -7,8 +7,11 @@
   --accent-color: #80cbc4;
   --accent-color-hover: #90dbd4;
 
-  /* Background image (Plants by default) */
-  --background-image: url('/backgrounds/austin-distel-vC_Q127x8Kg-unsplash.jpg');
+  /* Body copy color for text, icons, inputs */
+  --body-copy-color: rgba(255, 255, 255, 0.7);
+
+  /* Background image (Waterfall by default) */
+  --background-image: url('/backgrounds/adam-kool-ndN00KmbJ1c-unsplash.jpg');
 }
 
 /* =============================================================================
@@ -420,7 +423,7 @@ body:has(.post-inline-edit .post-form)::before {
   background: transparent;
   border: 1px solid #b0bec5;
   border-radius: 4px;
-  color: #c0c0c0;
+  color: var(--body-copy-color);
   font-size: 0.85rem;
 }
 
@@ -430,8 +433,8 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .topic-sidebar-form-input::placeholder {
-  color: #b0bec5;
-  opacity: 0.7;
+  color: var(--body-copy-color);
+  opacity: 0.4;
 }
 
 .topic-sidebar-form-input-icon {
@@ -575,7 +578,7 @@ body:has(.post-inline-edit .post-form)::before {
   background: transparent;
   border: 1px solid #b0bec5;
   border-radius: 6px;
-  color: #e0e0e0;
+  color: var(--body-copy-color);
   font-size: 0.875rem;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -604,8 +607,8 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .search-sidebar-input::placeholder {
-  color: #b0bec5;
-  opacity: 0.8;
+  color: var(--body-copy-color);
+  opacity: 0.4;
 }
 
 .search-sidebar-close {
@@ -1064,6 +1067,11 @@ body:has(.post-inline-edit .post-form)::before {
   color: #dc2626;
 }
 
+.form-success {
+  font-size: 0.7rem;
+  color: #16a34a;
+}
+
 .form-input,
 .form-textarea {
   padding: 0.5rem 0.625rem;
@@ -1074,7 +1082,7 @@ body:has(.post-inline-edit .post-form)::before {
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
   background: transparent;
-  color: #c0c0c0;
+  color: var(--body-copy-color);
 }
 
 .form-input:focus,
@@ -1086,7 +1094,8 @@ body:has(.post-inline-edit .post-form)::before {
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: #404040;
+  color: var(--body-copy-color);
+  opacity: 0.4;
 }
 
 .form-input-error,
@@ -1133,7 +1142,7 @@ body:has(.post-inline-edit .post-form)::before {
   height: 0.75rem;
   cursor: pointer;
   background: transparent;
-  border: 1px solid #4a4a4a;
+  border: 1px solid var(--body-copy-color);
   border-radius: 2px;
   position: relative;
   flex-shrink: 0;
@@ -1154,7 +1163,7 @@ body:has(.post-inline-edit .post-form)::before {
   top: 1px;
   width: 5px;
   height: 9px;
-  border: solid #4a4a4a;
+  border: solid var(--body-copy-color);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -1170,7 +1179,7 @@ body:has(.post-inline-edit .post-form)::before {
   top: 3px;
   width: 8px;
   height: 8px;
-  background: #4a4a4a;
+  background: var(--body-copy-color);
   border-radius: 50%;
 }
 
@@ -1179,7 +1188,7 @@ body:has(.post-inline-edit .post-form)::before {
   font-size: 0.8rem;
   font-family: inherit;
   font-weight: normal;
-  color: #4a4a4a;
+  color: var(--body-copy-color);
   text-transform: capitalize;
 }
 
@@ -1219,12 +1228,13 @@ body:has(.post-inline-edit .post-form)::before {
 .form-toggle-label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #c0c0c0;
+  color: var(--body-copy-color);
 }
 
 .form-toggle-description {
   font-size: 0.75rem;
-  color: #606060;
+  color: var(--body-copy-color);
+  opacity: 0.6;
 }
 
 .form-toggle-switch-wrapper {
@@ -1257,7 +1267,7 @@ body:has(.post-inline-edit .post-form)::before {
 .form-toggle-knob {
   width: 16px;
   height: 16px;
-  background: #c0c0c0;
+  background: var(--body-copy-color);
   border-radius: 50%;
   transition: transform 0.2s;
 }
@@ -1527,9 +1537,9 @@ body:has(.post-inline-edit .post-form)::before {
 .post-view-edit-form .form-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0;
-  color: #333;
+  color: var(--body-copy-color);
   font-size: 0.9rem;
   line-height: 1.6;
   padding: 0.35rem 0;
@@ -1542,7 +1552,7 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .post-view-edit-form .form-group label {
-  color: #555;
+  color: var(--body-copy-color);
 }
 
 .post-view-edit-form .form-actions {
@@ -1555,9 +1565,9 @@ body:has(.post-inline-edit .post-form)::before {
   padding: 0.35rem 0;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0;
-  color: #333;
+  color: var(--body-copy-color);
   font-size: 0.9rem;
   line-height: 1.6;
   resize: vertical;
@@ -1576,13 +1586,13 @@ body:has(.post-inline-edit .post-form)::before {
   gap: 0.5rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .post-view-edit-delete-btn {
   background: transparent;
   border: none;
-  color: #999;
+  color: var(--body-copy-color);
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
@@ -1620,7 +1630,7 @@ body:has(.post-inline-edit .post-form)::before {
 .metadata-field-btn {
   background: transparent;
   border: none;
-  color: #4a4a4a;
+  color: var(--body-copy-color);
   font-size: 0.8rem;
   font-family: inherit;
   cursor: pointer;
@@ -1629,7 +1639,7 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .metadata-field-btn:hover {
-  color: #333;
+  color: var(--body-copy-color);
 }
 
 .metadata-field-btn-add {
@@ -1644,13 +1654,13 @@ body:has(.post-inline-edit .post-form)::before {
   font-size: 0.85rem;
   padding: 0.5rem 1.25rem;
   background: transparent;
-  border: 1px solid #4a4a4a;
-  color: #4a4a4a;
+  border: 1px solid var(--body-copy-color);
+  color: var(--body-copy-color);
   border-radius: 6px;
 }
 
 .post-view-edit-actions .btn:hover {
-  background: rgba(74, 74, 74, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Header right side container (topic + delete) */
@@ -1670,7 +1680,7 @@ body:has(.post-inline-edit .post-form)::before {
   padding: 2px 0 0 0;
   background: transparent;
   border: none;
-  color: #111;
+  color: var(--body-copy-color);
   cursor: pointer;
   transition: color 0.15s;
   opacity: 0.6;
@@ -1688,15 +1698,15 @@ body:has(.post-inline-edit .post-form)::before {
 
 .post-view {
   max-width: 640px;
-  background: linear-gradient(180deg, #ffffff 0%, #faf9f7 50%, #f5f3f0 100%);
+  background: #00000044;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 7px;
   padding: 1.5rem 1.25rem 1.25rem 1.25rem;
   box-shadow:
-    0 2px 5px rgba(0, 0, 0, 0.15),
-    0 5px 5px rgba(0, 0, 0, 0.2),
-    0 5px 5px rgba(0, 0, 0, 0.25),
-    0 5px 5px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+    0 2px 5px rgba(0, 0, 0, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+  border: none;
   position: relative;
 }
 
@@ -1729,7 +1739,7 @@ body:has(.post-inline-edit .post-form)::before {
   font-size: 1.25rem;
   line-height: 1.7;
   font-weight: 300;
-  color: #ffffff;
+  color: var(--body-copy-color);
   min-height: auto;
   resize: none;
 }
@@ -1785,7 +1795,7 @@ body:has(.post-inline-edit .post-form)::before {
 
 .post-view-header {
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #ababab;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .post-view-header-row {
@@ -1807,14 +1817,14 @@ body:has(.post-inline-edit .post-form)::before {
 .post-view-date-month {
   font-size: 0.7rem;
   font-weight: 500;
-  color: #333;
+  color: var(--body-copy-color);
   margin-bottom: 0.15rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
 
 .post-view-date-number {
-  color: #333;
+  color: var(--body-copy-color);
   font-size: 1.35rem;
   font-weight: 300;
   line-height: 1;
@@ -1827,14 +1837,14 @@ body:has(.post-inline-edit .post-form)::before {
 
 .post-view-topic .tag {
   background: transparent;
-  color: #4a4a4a;
+  color: var(--body-copy-color);
   padding: 0;
   margin: 0;
   text-transform: uppercase;
 }
 
 .post-view-topic .tag svg {
-  fill: #4a4a4a;
+  fill: var(--body-copy-color);
 }
 
 /* Topic selector dropdown (editing mode) */
@@ -1849,7 +1859,7 @@ body:has(.post-inline-edit .post-form)::before {
   padding: 0;
   background: transparent;
   border: none;
-  color: #4a4a4a;
+  color: var(--body-copy-color);
   font-size: 0.7rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -1859,20 +1869,21 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .post-view-topic-trigger:hover {
-  color: #333;
+  color: var(--body-copy-color);
 }
 
 .post-view-topic-trigger svg {
-  fill: #4a4a4a;
+  fill: var(--body-copy-color);
   transition: fill 0.15s ease;
 }
 
 .post-view-topic-trigger:hover svg {
-  fill: #333;
+  fill: var(--body-copy-color);
 }
 
 .post-view-topic-placeholder {
-  color: #999;
+  color: var(--body-copy-color);
+  opacity: 0.5;
   font-style: italic;
   text-transform: none;
 }
@@ -1929,7 +1940,7 @@ body:has(.post-inline-edit .post-form)::before {
   display: flex;
   font-size: 1.35rem;
   font-weight: 400;
-  color: #3a3a3a;
+  color: var(--body-copy-color);
   line-height: 1.4;
   margin: 0 0 0.5rem 0;
 }
@@ -1939,16 +1950,16 @@ body:has(.post-inline-edit .post-form)::before {
   align-items: center;
   gap: 1rem;
   font-size: 0.7rem;
-  color: #999;
+  color: var(--body-copy-color);
   margin-bottom: 1.5rem;
 }
 
 .post-view-date {
-  color: #999;
+  color: var(--body-copy-color);
 }
 
 .post-view-time {
-  color: #999;
+  color: var(--body-copy-color);
 }
 
 .post-view-content {
@@ -1956,14 +1967,14 @@ body:has(.post-inline-edit .post-form)::before {
   font-size: 1rem;
   line-height: 1.8;
   font-weight: 400;
-  color: #4a4a4a;
+  color: var(--body-copy-color);
   white-space: pre-wrap;
 }
 
 .post-view-metadata {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #c9c9c9;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .post-view-metadata-item {
@@ -1979,7 +1990,7 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .post-view-metadata-value {
-  color: #606060;
+  color: var(--body-copy-color);
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
 }
 
@@ -1990,7 +2001,7 @@ body:has(.post-inline-edit .post-form)::before {
   align-items: flex-end;
   gap: 0.24rem;
   font-size: 0.8rem;
-  color: #606060;
+  color: var(--body-copy-color);
   padding-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -2019,7 +2030,7 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .metadata-detail {
-  color: #777777;
+  color: var(--body-copy-color);
 }
 
 .post-view-specialized-metadata {
@@ -2031,7 +2042,7 @@ body:has(.post-inline-edit .post-form)::before {
   display: block;
   font-size: 0.7rem;
   font-weight: 500;
-  color: #777777;
+  color: var(--body-copy-color);
   text-transform: uppercase;
   letter-spacing: 0.15em;
   margin-bottom: 0.25rem;
@@ -2342,14 +2353,15 @@ body:has(.post-inline-edit .post-form)::before {
   right: 0.75rem;
   background: none;
   border: none;
-  color: #666;
+  color: var(--body-copy-color);
+  opacity: 0.6;
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
 }
 
 .password-toggle:hover {
-  color: #e0e0e0;
+  opacity: 1;
 }
 
 /* =============================================================================
@@ -2439,7 +2451,7 @@ body:has(.post-inline-edit .post-form)::before {
   border: 1px solid #1a1a1a;
   border-radius: 3px;
   background: rgba(5, 5, 5, 0.9);
-  color: #c0c0c0;
+  color: var(--body-copy-color);
   font-size: 0.75rem;
   font-family: inherit;
 }
@@ -2450,7 +2462,8 @@ body:has(.post-inline-edit .post-form)::before {
 }
 
 .taxonomy-selector-search-input::placeholder {
-  color: #404040;
+  color: var(--body-copy-color);
+  opacity: 0.4;
 }
 
 .taxonomy-selector-options {

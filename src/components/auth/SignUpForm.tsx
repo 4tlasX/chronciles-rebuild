@@ -6,6 +6,8 @@ import { FormPanel } from '@/components/layout';
 import { FormGroup, FormRow, TextInput, EmailInput, PasswordInput, Button } from '@/components/form';
 import { useAuthStore } from '@/stores';
 import { registerUserAction } from '@/app/auth/actions';
+import { encryptionService } from '@/lib/crypto';
+import { useEncryption, RecoveryKeyDialog } from '@/components/encryption';
 
 interface FormState {
   username: string;
@@ -24,6 +26,7 @@ interface FormErrors {
 
 export function SignUpForm() {
   const router = useRouter();
+  const { setMasterKey } = useEncryption();
   const [formData, setFormData] = useState<FormState>({
     username: '',
     email: '',
@@ -32,6 +35,8 @@ export function SignUpForm() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,26 +56,53 @@ export function SignUpForm() {
       return;
     }
 
-    const fd = new FormData();
-    fd.append('username', formData.username);
-    fd.append('email', formData.email);
-    fd.append('password', formData.password);
+    try {
+      // Set up encryption (generates master key, wraps with password)
+      const encryptionResult = await encryptionService.setupEncryption(formData.password);
 
-    const result = await registerUserAction(fd);
+      const fd = new FormData();
+      fd.append('username', formData.username);
+      fd.append('email', formData.email);
+      fd.append('password', formData.password);
+      // Append encryption params
+      fd.append('kekSalt', encryptionResult.salt);
+      fd.append('wrappedMK', encryptionResult.wrappedMK);
+      fd.append('wrapIv', encryptionResult.wrapIv);
+      fd.append('recoveryWrappedMK', encryptionResult.recoveryWrappedMK);
+      fd.append('recoveryWrapIv', encryptionResult.recoveryWrapIv);
 
-    if (result.error) {
-      setErrors({ general: result.error });
+      const result = await registerUserAction(fd);
+
+      if (result.error) {
+        setErrors({ general: result.error });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (result.success && result.data) {
+        // Store master key in Provider
+        setMasterKey(encryptionResult.masterKey);
+
+        // Update auth store
+        useAuthStore.getState().setAuth({
+          userName: result.data.userName,
+          userEmail: result.data.userEmail,
+        });
+
+        // Show recovery key dialog
+        setRecoveryKey(encryptionResult.recoveryKey);
+        setShowRecoveryDialog(true);
+      }
+    } catch (error) {
+      setErrors({ general: 'An error occurred during registration' });
       setIsSubmitting(false);
-      return;
     }
+  };
 
-    if (result.success && result.data) {
-      useAuthStore.getState().setAuth({
-        userName: result.data.userName,
-        userEmail: result.data.userEmail,
-      });
-      router.push('/');
-    }
+  const handleRecoveryDialogClose = () => {
+    setShowRecoveryDialog(false);
+    setRecoveryKey(null);
+    router.push('/');
   };
 
   return (
@@ -149,6 +181,15 @@ export function SignUpForm() {
           </Button>
         </div>
       </form>
+
+      {/* Recovery Key Dialog - shown once after registration */}
+      {recoveryKey && (
+        <RecoveryKeyDialog
+          isOpen={showRecoveryDialog}
+          recoveryKey={recoveryKey}
+          onClose={handleRecoveryDialogClose}
+        />
+      )}
     </FormPanel>
   );
 }

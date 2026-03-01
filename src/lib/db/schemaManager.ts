@@ -69,10 +69,16 @@ function generateTenantSchemaStatements(schemaName: string): string[] {
     )`,
 
     // Posts table (main content storage)
+    // Supports both plaintext (content, metadata) and encrypted (content_encrypted, etc.) posts
     `CREATE TABLE ${s}.posts (
       id SERIAL PRIMARY KEY,
-      content TEXT NOT NULL,
+      content TEXT,
       metadata JSONB DEFAULT '{}',
+      content_encrypted BYTEA,
+      content_iv BYTEA,
+      metadata_encrypted BYTEA,
+      metadata_iv BYTEA,
+      is_encrypted BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
 
@@ -136,13 +142,25 @@ async function tenantSchemaExists(schemaName: string): Promise<boolean> {
 }
 
 /**
+ * Encryption parameters for account creation
+ */
+export interface EncryptionSetupParams {
+  kekSalt: Buffer;
+  encryptedMasterKey: Buffer;
+  kekWrapIv: Buffer;
+  recoveryWrappedMK: Buffer;
+  recoveryWrapIv: Buffer;
+}
+
+/**
  * Registers a new account and creates their tenant schema
  * This is a lower-level function - prefer registerUserAction for user signup
  */
 export async function registerTenant(
   email: string,
   username: string,
-  passwordHash: string
+  passwordHash: string,
+  encryptionParams?: EncryptionSetupParams
 ): Promise<{
   account: {
     id: number;
@@ -151,19 +169,29 @@ export async function registerTenant(
     username: string;
     tenantSchemaName: string;
     createdAt: Date;
+    encryptionEnabled: boolean;
   };
   schemaName: string;
 }> {
   // Generate unique schema name
   const schemaName = await generateSchemaName();
 
-  // Create the account record
+  // Create the account record with optional encryption fields
   const account = await prisma.account.create({
     data: {
       email,
       username,
       passwordHash,
       tenantSchemaName: schemaName,
+      // Encryption fields (optional)
+      ...(encryptionParams && {
+        kekSalt: encryptionParams.kekSalt,
+        encryptedMasterKey: encryptionParams.encryptedMasterKey,
+        kekWrapIv: encryptionParams.kekWrapIv,
+        recoveryWrappedMK: encryptionParams.recoveryWrappedMK,
+        recoveryWrapIv: encryptionParams.recoveryWrapIv,
+        encryptionEnabled: true,
+      }),
     },
   });
 
@@ -177,7 +205,15 @@ export async function registerTenant(
   await seedDefaultSettings(schemaName);
 
   return {
-    account,
+    account: {
+      id: account.id,
+      userId: account.userId,
+      email: account.email,
+      username: account.username,
+      tenantSchemaName: account.tenantSchemaName,
+      createdAt: account.createdAt,
+      encryptionEnabled: account.encryptionEnabled,
+    },
     schemaName,
   };
 }

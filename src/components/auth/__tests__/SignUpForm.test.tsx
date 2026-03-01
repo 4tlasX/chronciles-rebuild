@@ -2,6 +2,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SignUpForm } from '../SignUpForm';
 
+// Mock encryption service
+vi.mock('@/lib/crypto', () => ({
+  encryptionService: {
+    setupEncryption: vi.fn().mockResolvedValue({
+      salt: 'test-salt',
+      wrappedMK: 'test-wrapped-mk',
+      wrapIv: 'test-wrap-iv',
+      iterations: 600000,
+      masterKey: {} as CryptoKey,
+      recoveryKey: 'test-recovery-key',
+      recoveryWrappedMK: 'test-recovery-wrapped-mk',
+      recoveryWrapIv: 'test-recovery-wrap-iv',
+    }),
+  },
+}));
+
+// Mock encryption provider
+vi.mock('@/components/encryption', () => ({
+  useEncryption: () => ({
+    setMasterKey: vi.fn(),
+  }),
+  RecoveryKeyDialog: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? <div data-testid="recovery-key-dialog"><button onClick={onClose}>Close</button></div> : null,
+}));
+
 // Mock next/navigation
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({

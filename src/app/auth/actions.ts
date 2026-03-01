@@ -8,6 +8,17 @@ import { generateSchemaName, createTenantSchema } from '@/lib/db';
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const SESSION_COOKIE_NAME = 'chronicles_session';
 
+// Encryption params returned to client on login
+export interface EncryptionParamsResult {
+  encryptionEnabled: boolean;
+  kekSalt?: string;
+  encryptedMasterKey?: string;
+  kekWrapIv?: string;
+  kekIterations?: number;
+  recoveryWrappedMK?: string;
+  recoveryWrapIv?: string;
+}
+
 // Result returned to client (no schema info)
 export interface AuthResult {
   success?: boolean;
@@ -16,6 +27,7 @@ export interface AuthResult {
     userName: string;
     userEmail: string;
   };
+  encryption?: EncryptionParamsResult;
 }
 
 /**
@@ -115,12 +127,33 @@ export async function cleanupExpiredSessions(): Promise<number> {
 }
 
 /**
+ * Helper to convert base64 to Buffer for database storage
+ */
+function base64ToBuffer(base64: string): Buffer {
+  return Buffer.from(base64, 'base64');
+}
+
+/**
+ * Helper to convert Buffer to base64 for client
+ */
+function bufferToBase64(buffer: Buffer): string {
+  return buffer.toString('base64');
+}
+
+/**
  * Register a new user account
  */
 export async function registerUserAction(formData: FormData): Promise<AuthResult> {
   const username = (formData.get('username') as string)?.trim();
   const email = (formData.get('email') as string)?.trim().toLowerCase();
   const password = formData.get('password') as string;
+
+  // Encryption params (optional - sent from client after setupEncryption)
+  const kekSalt = formData.get('kekSalt') as string | null;
+  const wrappedMK = formData.get('wrappedMK') as string | null;
+  const wrapIv = formData.get('wrapIv') as string | null;
+  const recoveryWrappedMK = formData.get('recoveryWrappedMK') as string | null;
+  const recoveryWrapIv = formData.get('recoveryWrapIv') as string | null;
 
   // Validate inputs
   const usernameValidation = validateUsername(username || '');
@@ -158,13 +191,24 @@ export async function registerUserAction(formData: FormData): Promise<AuthResult
   // Generate tenant schema
   const schemaName = await generateSchemaName();
 
-  // Create account
+  // Determine if encryption is being set up
+  const hasEncryption = kekSalt && wrappedMK && wrapIv && recoveryWrappedMK && recoveryWrapIv;
+
+  // Create account with optional encryption fields
   const account = await prisma.account.create({
     data: {
       username,
       email,
       passwordHash,
       tenantSchemaName: schemaName,
+      ...(hasEncryption && {
+        kekSalt: base64ToBuffer(kekSalt),
+        encryptedMasterKey: base64ToBuffer(wrappedMK),
+        kekWrapIv: base64ToBuffer(wrapIv),
+        recoveryWrappedMK: base64ToBuffer(recoveryWrappedMK),
+        recoveryWrapIv: base64ToBuffer(recoveryWrapIv),
+        encryptionEnabled: true,
+      }),
     },
   });
 
@@ -182,6 +226,9 @@ export async function registerUserAction(formData: FormData): Promise<AuthResult
       userName: account.username,
       userEmail: account.email,
     },
+    encryption: {
+      encryptionEnabled: account.encryptionEnabled,
+    },
   };
 }
 
@@ -196,7 +243,7 @@ export async function loginUserAction(formData: FormData): Promise<AuthResult> {
     return { error: 'Email and password are required' };
   }
 
-  // Find user by email
+  // Find user by email (include encryption fields)
   const account = await prisma.account.findUnique({
     where: { email },
   });
@@ -223,13 +270,31 @@ export async function loginUserAction(formData: FormData): Promise<AuthResult> {
   const { token, expiresAt } = await createSession(account.id);
   await setSessionCookie(token, expiresAt);
 
-  // Return only display info to client (no schema)
+  // Build encryption params if enabled
+  let encryption: EncryptionParamsResult = {
+    encryptionEnabled: account.encryptionEnabled,
+  };
+
+  if (account.encryptionEnabled && account.kekSalt && account.encryptedMasterKey && account.kekWrapIv) {
+    encryption = {
+      encryptionEnabled: true,
+      kekSalt: bufferToBase64(account.kekSalt),
+      encryptedMasterKey: bufferToBase64(account.encryptedMasterKey),
+      kekWrapIv: bufferToBase64(account.kekWrapIv),
+      kekIterations: account.kekIterations,
+      recoveryWrappedMK: account.recoveryWrappedMK ? bufferToBase64(account.recoveryWrappedMK) : undefined,
+      recoveryWrapIv: account.recoveryWrapIv ? bufferToBase64(account.recoveryWrapIv) : undefined,
+    };
+  }
+
+  // Return display info + encryption params
   return {
     success: true,
     data: {
       userName: account.username,
       userEmail: account.email,
     },
+    encryption,
   };
 }
 
@@ -339,4 +404,102 @@ export async function getServerSession(): Promise<{
     userName: session.account.username,
     userEmail: session.account.email,
   };
+}
+
+/**
+ * Get encryption params for the current session.
+ * Used by EncryptionProvider to initialize.
+ */
+export async function getEncryptionParams(): Promise<EncryptionParamsResult | null> {
+  const token = await getSessionToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { token },
+    include: {
+      account: {
+        select: {
+          encryptionEnabled: true,
+          kekSalt: true,
+          encryptedMasterKey: true,
+          kekWrapIv: true,
+          kekIterations: true,
+          recoveryWrappedMK: true,
+          recoveryWrapIv: true,
+        },
+      },
+    },
+  });
+
+  if (!session || session.expiresAt < new Date()) {
+    return null;
+  }
+
+  const account = session.account;
+
+  if (!account.encryptionEnabled) {
+    return { encryptionEnabled: false };
+  }
+
+  return {
+    encryptionEnabled: true,
+    kekSalt: account.kekSalt ? bufferToBase64(account.kekSalt) : undefined,
+    encryptedMasterKey: account.encryptedMasterKey ? bufferToBase64(account.encryptedMasterKey) : undefined,
+    kekWrapIv: account.kekWrapIv ? bufferToBase64(account.kekWrapIv) : undefined,
+    kekIterations: account.kekIterations,
+    recoveryWrappedMK: account.recoveryWrappedMK ? bufferToBase64(account.recoveryWrappedMK) : undefined,
+    recoveryWrapIv: account.recoveryWrapIv ? bufferToBase64(account.recoveryWrapIv) : undefined,
+  };
+}
+
+/**
+ * Update password and re-wrap master key (after recovery)
+ */
+export async function updatePasswordAction(formData: FormData): Promise<AuthResult> {
+  const token = await getSessionToken();
+  if (!token) {
+    return { error: 'Not authenticated' };
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { token },
+    include: { account: true },
+  });
+
+  if (!session || session.expiresAt < new Date()) {
+    return { error: 'Session expired' };
+  }
+
+  const newPassword = formData.get('newPassword') as string;
+  const kekSalt = formData.get('kekSalt') as string;
+  const wrappedMK = formData.get('wrappedMK') as string;
+  const wrapIv = formData.get('wrapIv') as string;
+
+  if (!newPassword || !kekSalt || !wrappedMK || !wrapIv) {
+    return { error: 'Missing required fields' };
+  }
+
+  // Validate new password
+  const passwordValidation = validatePassword(newPassword);
+  if (!passwordValidation.valid) {
+    return { error: passwordValidation.errors[0] };
+  }
+
+  // Hash new password and update encryption params
+  const passwordHash = await hashPassword(newPassword);
+
+  await prisma.account.update({
+    where: { id: session.account.id },
+    data: {
+      passwordHash,
+      kekSalt: base64ToBuffer(kekSalt),
+      encryptedMasterKey: base64ToBuffer(wrappedMK),
+      kekWrapIv: base64ToBuffer(wrapIv),
+    },
+  });
+
+  return { success: true };
 }

@@ -56,9 +56,20 @@ describe('Schema Management Operations', () => {
     it('should include correct column definitions for posts', () => {
       const sql = generateTenantSchemaSQL('test_schema');
 
-      expect(sql).toContain('content TEXT NOT NULL');
+      // content is nullable to support encrypted posts
+      expect(sql).toContain('content TEXT');
       expect(sql).toContain("metadata JSONB DEFAULT '{}'");
       expect(sql).toContain('created_at TIMESTAMPTZ');
+    });
+
+    it('should include encryption columns for posts', () => {
+      const sql = generateTenantSchemaSQL('test_schema');
+
+      expect(sql).toContain('content_encrypted BYTEA');
+      expect(sql).toContain('content_iv BYTEA');
+      expect(sql).toContain('metadata_encrypted BYTEA');
+      expect(sql).toContain('metadata_iv BYTEA');
+      expect(sql).toContain('is_encrypted BOOLEAN DEFAULT FALSE');
     });
 
     it('should include foreign key constraints in post_taxonomies', () => {

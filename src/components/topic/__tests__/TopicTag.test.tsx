@@ -33,11 +33,11 @@ describe('TopicTag', () => {
     expect(container.firstChild).toHaveClass('tag', 'custom');
   });
 
-  it('renders icon using accent color (no inline background)', () => {
+  it('renders icon using muted color (no inline background)', () => {
     const { container } = render(<TopicTag topic={mockTopic} />);
     const svg = container.querySelector('svg');
-    // TopicTag now uses TopicIcon which fills with accent color
-    expect(svg).toHaveAttribute('fill', 'var(--accent-color)');
+    // TopicTag uses TopicIcon which fills with muted color
+    expect(svg).toHaveAttribute('fill', '#b0bec5');
   });
 
   it('does not apply inline backgroundColor styles', () => {

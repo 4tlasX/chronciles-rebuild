@@ -17,6 +17,7 @@ import {
   updateAccentColorAction,
   updateBackgroundImageAction,
   toggleFeatureAction,
+  seedDefaultTopicsAction,
   signOutAction,
 } from './actions';
 
@@ -189,6 +190,28 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
     });
   };
 
+  const [seedMessage, setSeedMessage] = useState<string | null>(null);
+
+  const handleSeedTopics = () => {
+    setSeedMessage(null);
+    setError(null);
+
+    startTransition(async () => {
+      const result = await seedDefaultTopicsAction();
+      if (result.error) {
+        setError(result.error);
+      } else if (result.count !== undefined) {
+        if (result.count > 0) {
+          setSeedMessage(`Added ${result.count} default topic${result.count === 1 ? '' : 's'}`);
+        } else {
+          setSeedMessage('All default topics already exist');
+        }
+        // Clear message after 3 seconds
+        setTimeout(() => setSeedMessage(null), 3000);
+      }
+    });
+  };
+
   const timezoneOptions = TIMEZONES.map((tz) => ({
     value: tz.value,
     label: tz.label,
@@ -268,6 +291,28 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
             </a>
           </p>
         </FormGroup>
+      </Card>
+
+      {/* Topics */}
+      <Card>
+        <CardTitle>Topics</CardTitle>
+        <div className="card-body">
+          <p className="form-hint" style={{ marginBottom: '0.75rem' }}>
+            Seed the default topics (Task, Idea, Research, Event, etc.) if they were deleted or missing
+          </p>
+          {seedMessage && (
+            <p className="form-success" style={{ marginBottom: '0.75rem' }}>
+              {seedMessage}
+            </p>
+          )}
+          <Button
+            variant="secondary"
+            onClick={handleSeedTopics}
+            disabled={isPending}
+          >
+            {isPending ? 'Seeding...' : 'Seed Default Topics'}
+          </Button>
+        </div>
       </Card>
 
       {/* Features */}

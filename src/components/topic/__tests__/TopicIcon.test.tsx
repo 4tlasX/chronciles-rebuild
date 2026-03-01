@@ -65,9 +65,10 @@ describe('TopicIcon', () => {
     expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'topic icon');
   });
 
-  it('uses accent color fill on SVG', () => {
+  it('uses icon color fill on SVG', () => {
     const { container } = render(<TopicIcon icon="pen" />);
     const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('fill', 'var(--accent-color)');
+    // TopicIcon uses a muted color for icons
+    expect(svg).toHaveAttribute('fill', '#b0bec5');
   });
 });

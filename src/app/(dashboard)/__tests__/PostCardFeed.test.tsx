@@ -3,6 +3,22 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PostCardFeed } from '../PostCardFeed';
 import type { Post, Taxonomy } from '@/lib/db';
 
+// Mock the encryption hook
+vi.mock('@/components/encryption', () => ({
+  useEncryption: () => ({
+    isUnlocked: false,
+    encryptionEnabled: false,
+    unlock: vi.fn(),
+    lock: vi.fn(),
+    setMasterKey: vi.fn(),
+    encryptPost: vi.fn(),
+    decryptPost: vi.fn(),
+    decryptPosts: vi.fn().mockResolvedValue([]),
+  }),
+  UnlockDialog: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="unlock-dialog">Unlock Dialog</div> : null,
+}));
+
 // Mock IntersectionObserver
 class MockIntersectionObserver {
   observe = vi.fn();
@@ -22,12 +38,33 @@ vi.mock('../posts/actions', () => ({
 }));
 
 // Mock the UI store
-const mockTriggerCreatePost = vi.fn();
 let mockCreatePostTrigger = 0;
 
+interface MockUIState {
+  createPostTrigger: number;
+  selectedTopicId: number | null;
+  isTopicSidebarOpen: boolean;
+  isSearchSidebarOpen: boolean;
+  searchKeyword: string;
+  searchDateFrom: string;
+  searchDateTo: string;
+}
+
+const mockUIState: MockUIState = {
+  createPostTrigger: 0,
+  selectedTopicId: null,
+  isTopicSidebarOpen: false,
+  isSearchSidebarOpen: false,
+  searchKeyword: '',
+  searchDateFrom: '',
+  searchDateTo: '',
+};
+
 vi.mock('@/stores', () => ({
-  useUIStore: (selector: (state: { createPostTrigger: number }) => number) =>
-    selector({ createPostTrigger: mockCreatePostTrigger }),
+  useUIStore: <T,>(selector: (state: MockUIState) => T): T => {
+    mockUIState.createPostTrigger = mockCreatePostTrigger;
+    return selector(mockUIState);
+  },
 }));
 
 describe('PostCardFeed', () => {
@@ -259,13 +296,17 @@ describe('PostCardFeed', () => {
   });
 
   describe('Delete Post', () => {
-    it('calls deletePostAction when delete is clicked on non-editing post', async () => {
+    it('calls deletePostAction when delete is clicked in edit mode', async () => {
       const { deletePostAction } = await import('../posts/actions');
       render(<PostCardFeed {...defaultProps} />);
 
-      // Find delete button (X) for first post
-      const deleteButtons = screen.getAllByLabelText('Delete post');
-      fireEvent.click(deleteButtons[0]);
+      // Enter edit mode on first post
+      const firstPost = screen.getByText('First post content').closest('article');
+      fireEvent.click(firstPost!);
+
+      // Find and click delete button (appears in edit mode)
+      const deleteButton = screen.getByRole('button', { name: 'Delete' });
+      fireEvent.click(deleteButton);
 
       await waitFor(() => {
         expect(deletePostAction).toHaveBeenCalled();
@@ -275,9 +316,13 @@ describe('PostCardFeed', () => {
     it('removes post from list after deletion', async () => {
       render(<PostCardFeed {...defaultProps} />);
 
-      // Delete first post
-      const deleteButtons = screen.getAllByLabelText('Delete post');
-      fireEvent.click(deleteButtons[0]);
+      // Enter edit mode on first post
+      const firstPost = screen.getByText('First post content').closest('article');
+      fireEvent.click(firstPost!);
+
+      // Delete the post
+      const deleteButton = screen.getByRole('button', { name: 'Delete' });
+      fireEvent.click(deleteButton);
 
       await waitFor(() => {
         expect(screen.queryByText('First post content')).not.toBeInTheDocument();
@@ -341,7 +386,11 @@ describe('PostCardFeed', () => {
       render(<PostCardFeed {...defaultProps} />);
 
       // Second post has _taxonomyId: 1 which maps to 'Task'
-      expect(screen.getByText('Task')).toBeInTheDocument();
+      // Find the topic trigger button within a post card that contains "Task"
+      const postCards = document.querySelectorAll('.post-view');
+      const secondPostCard = postCards[1]; // Second post has the taxonomy
+      const topicTrigger = secondPostCard.querySelector('.post-view-topic-trigger');
+      expect(topicTrigger?.textContent).toContain('Task');
     });
 
     it('shows topic placeholder for posts without taxonomy', () => {

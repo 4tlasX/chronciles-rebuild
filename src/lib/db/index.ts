@@ -20,6 +20,9 @@ export type {
   Setting,
   Taxonomy,
   Post,
+  PostWithEncryption,
+  SerializedPostWithEncryption,
+  DisplayPost,
   PostWithTaxonomies,
 } from './tenantQueries';
 
@@ -43,8 +46,10 @@ export {
 // Tenant Queries - Posts
 export {
   createPost,
+  createEncryptedPost,
   getPost,
   getAllPosts,
+  getAllPostsWithEncryption,
   updatePost,
   deletePost,
 } from './tenantQueries';
